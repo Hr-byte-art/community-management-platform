@@ -49,3 +49,5 @@ temp/
 *.sqlite3
 
 *.md
+# Keep root README visible in Git
+!/README.md
