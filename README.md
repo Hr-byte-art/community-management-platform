@@ -1,193 +1,213 @@
-﻿# 社区综合治理服务系统
+﻿<div align="center">
+  <h1>社区综合治理服务系统</h1>
+  <p><strong>基于 Vue 3 + Spring Boot 3 + MySQL + Redis 的前后端分离社区治理平台</strong></p>
+  <p>适用于毕业设计、课程设计、综合实训与社区信息化平台原型展示</p>
+  <p>
+    <img src="https://img.shields.io/badge/Frontend-Vue%203-42b883?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue 3" />
+    <img src="https://img.shields.io/badge/UI-Element%20Plus-409EFF?style=for-the-badge&logo=element&logoColor=white" alt="Element Plus" />
+    <img src="https://img.shields.io/badge/Backend-Spring%20Boot%203-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot 3" />
+    <img src="https://img.shields.io/badge/Database-MySQL%208-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL 8" />
+    <img src="https://img.shields.io/badge/Cache-Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+    <img src="https://img.shields.io/badge/JDK-17-orange?style=for-the-badge&logo=openjdk&logoColor=white" alt="JDK 17" />
+  </p>
+  <p>
+    <img src="https://img.shields.io/github/stars/Hr-byte-art/community-management-platform?style=flat-square" alt="GitHub stars" />
+    <img src="https://img.shields.io/github/forks/Hr-byte-art/community-management-platform?style=flat-square" alt="GitHub forks" />
+    <img src="https://img.shields.io/github/issues/Hr-byte-art/community-management-platform?style=flat-square" alt="GitHub issues" />
+    <img src="https://img.shields.io/github/last-commit/Hr-byte-art/community-management-platform?style=flat-square" alt="Last commit" />
+  </p>
+</div>
 
-## 项目简介
+---
 
-社区综合治理服务系统是一个面向社区日常管理、公共服务与基层治理场景的前后端分离项目，适合作为毕业设计、课程设计或社区信息化平台原型。系统围绕“居民、服务、事务、工单、治安、通知、统计”几个核心方向展开，帮助社区管理人员提升信息维护效率、工单处置效率与公共服务触达能力，同时也为居民提供便捷的线上参与和服务入口。
+<a id="navigation"></a>
+## 快速导航
 
-项目采用 `Vue 3 + Element Plus + Vite` 构建前端界面，后端基于 `Spring Boot 3 + MyBatis-Plus + JWT` 搭建 RESTful API，并结合 `MySQL` 做业务数据持久化，使用 `Redis` 提供缓存能力。系统提供登录鉴权、居民档案、社区活动、服务预约、邻里互助、积分中心、消息中心、工单治理、治安管理、通知公告、统计分析、Excel 导出、操作日志等功能模块。
+- [项目速览](#overview)
+- [功能矩阵](#features)
+- [技术架构](#architecture)
+- [核心亮点](#highlights)
+- [业务闭环](#workflow)
+- [项目结构](#structure)
+- [快速启动](#quickstart)
+- [数据库脚本](#database)
+- [默认账号](#accounts)
+- [文档入口](#docs)
+- [适用场景](#scenes)
+- [注意事项](#notes)
 
-## 项目亮点
+<a id="overview"></a>
+## 项目速览
 
-- 前后端分离架构，页面与接口职责清晰，便于扩展与部署
-- 基于 JWT 的登录认证机制，支持普通用户与管理员角色区分
-- 工单治理模块支持超时标记、超时看板、自动派单规则与评价闭环
-- 提供消息中心、积分中心、邻里互助等增强居民参与感的功能设计
-- 首页集成 ECharts 数据看板，支持居民、活动、工单等多维统计展示
-- 后端支持 Excel 数据导出、全局异常处理、操作日志记录、定时任务扫描
-- 适合用于毕业设计答辩展示，业务模块较完整，场景覆盖较丰富
+> 一个围绕“居民管理、社区服务、工单治理、治安管理、通知公告、数据统计”展开的综合型社区治理平台。
 
-## 功能模块
-
-### 1. 用户与权限
-
-- 用户注册、登录、退出登录
-- JWT 鉴权与前端路由守卫
-- 管理员 / 普通用户角色区分
-- 个人中心资料维护、密码修改
-- 用户管理与账号状态控制
-- 操作日志审计
-
-### 2. 居民管理
-
-- 居民基础档案维护
-- 按楼栋、单元、房间管理居民信息
-- 居住类型、入住状态管理
-- 家庭成员关系维护
-- 居民数据 Excel 导出
-
-### 3. 社区事务管理
-
-- 社区活动发布、编辑、取消与查询
-- 活动报名与参与记录管理
-- 志愿者申请、审核与信息维护
-- 通知公告发布与阅读统计
-
-### 4. 服务成长模块
-
-- 办事指南发布与查询
-- 服务预约提交、状态流转与个人预约查询
-- 邻里互助信息发布、状态管理与预览
-- 积分中心与积分排行
-- 消息中心未读统计、单条已读、全部已读
-- 服务评价提交、我的评价、后台统计
-
-### 5. 工单治理模块
-
-- 工单创建、编辑、查询、处理与关闭
-- 支持工单类型、优先级、要求完成时间等字段
-- 支持自动派单规则配置
-- 支持超时工单标记与超时看板展示
-- 支持工单处理后的满意度评价闭环
-- 支持工单数据导出
-
-### 6. 治安与社区治理
-
-- 流动人口登记与到期状态巡检
-- 治安隐患上报、处理与跟踪
-- 网格化治理规则配置
-
-### 7. 数据统计与系统能力
-
-- 首页综合看板
-- 工单类型分布、月度工单趋势统计
-- 活动类型统计、居民统计
-- 文件上传能力
-- Swagger / OpenAPI 接口文档
-- Redis 缓存与定时任务支持
-
-## 业务流程示例
-
-一个典型的业务闭环如下：
-
-1. 用户注册并登录系统
-2. 居民或管理员提交工单 / 预约 / 互助信息
-3. 系统按照派单规则分配责任人，或由管理员手动处理
-4. 后台记录处理进度，并通过消息中心通知相关用户
-5. 工单完成后，用户可提交服务评价
-6. 积分中心根据业务行为累计积分
-7. 首页看板与统计模块对业务数据进行可视化展示
-
-该流程体现了本项目从“事项发起”到“处理反馈”再到“评价沉淀”的完整治理闭环。
-
-## 技术栈
-
-| 层次 | 技术方案 |
+| 维度 | 内容 |
 | --- | --- |
-| 前端 | Vue 3、Vite 5、Element Plus、Vue Router、Pinia、Axios、ECharts |
-| 后端 | Spring Boot 3.2、MyBatis-Plus、Spring Validation、Spring AOP、JWT |
-| 数据层 | MySQL 8、Redis |
-| 工具组件 | Hutool、EasyExcel、SpringDoc OpenAPI |
-| 运行环境 | JDK 17、Maven、Node.js 18+ |
+| 项目名称 | 社区综合治理服务系统 |
+| 项目定位 | 面向社区管理、居民服务与基层治理的数字化平台 |
+| 技术形态 | 前后端分离 Web 项目 |
+| 前端技术 | Vue 3、Vite、Element Plus、Pinia、Axios、ECharts |
+| 后端技术 | Spring Boot 3、MyBatis-Plus、JWT、Spring AOP、Validation |
+| 数据存储 | MySQL 8、Redis |
+| 核心能力 | 登录鉴权、居民管理、工单治理、服务评价、自动派单、消息中心、积分中心 |
+| 使用场景 | 毕业设计、课程设计、实训项目、业务原型展示 |
 
+本项目不仅覆盖了基础的增删改查功能，还补充了更适合答辩展示的业务闭环能力，例如：自动派单、工单超时治理、服务评价、站内消息、积分体系、首页数据看板等，使项目更完整、更具系统性。
+
+<a id="features"></a>
+## 功能矩阵
+
+| 模块 | 主要能力 | 典型使用角色 |
+| --- | --- | --- |
+| 用户与权限 | 注册登录、JWT 鉴权、角色区分、个人中心、密码修改 | 管理员、普通用户 |
+| 居民管理 | 居民档案维护、家庭关系维护、居住状态管理、导出 Excel | 管理员 |
+| 社区事务 | 社区活动发布、活动报名、志愿者管理、通知公告 | 管理员、居民 |
+| 服务成长 | 办事指南、服务预约、邻里互助、消息中心、积分中心 | 管理员、居民 |
+| 工单治理 | 工单提交、派单、处理、超时标记、超时看板、评价闭环 | 管理员、居民 |
+| 治安管理 | 流动人口登记、到期巡检、治安隐患处理 | 管理员 |
+| 数据统计 | 首页看板、工单趋势、活动分布、居民统计 | 管理员 |
+| 系统能力 | 文件上传、Excel 导出、操作日志、Swagger 文档、定时任务 | 管理员 |
+
+<a id="architecture"></a>
+## 技术架构
+
+```mermaid
+flowchart LR
+    A[Vue 3 前端界面] --> B[Vue Router 路由守卫]
+    A --> C[Pinia 状态管理]
+    A --> D[Axios 接口请求]
+    D --> E[Spring Boot 3 REST API]
+    E --> F[JWT 鉴权]
+    E --> G[MyBatis-Plus 业务持久层]
+    G --> H[(MySQL 8)]
+    E --> I[(Redis 缓存)]
+    E --> J[EasyExcel 数据导出]
+    E --> K[SpringDoc 接口文档]
+    E --> L[定时任务与日志审计]
+```
+
+<a id="highlights"></a>
+## 核心亮点
+
+### 1. 首屏数据看板
+
+- 首页汇总居民总数、社区活动、待处理工单、超时工单、今日待办、工单完成率
+- 使用 `ECharts` 展示工单类型分布、月度趋势、活动类型分布与综合统计
+- 适合做毕业设计答辩时的系统成果总览展示
+
+### 2. 工单治理闭环更完整
+
+- 支持工单创建、编辑、处理、关闭
+- 支持要求完成时间与超时工单自动扫描
+- 支持自动派单规则配置
+- 支持工单完成后的服务评价，形成完整闭环
+
+### 3. 更贴近真实社区业务
+
+- 居民管理、活动管理、志愿者管理、流动人口、治安隐患等模块组合较完整
+- 除基础管理外，还提供预约、互助、积分、消息等便民功能
+- 更适合作为“综合治理平台”而不是单一 CRUD 项目展示
+
+### 4. 便于二次扩展
+
+- 前后端分层清晰，页面、接口、服务、数据访问职责明确
+- 后端统一返回结构、异常处理、日志切面等基础设施较完善
+- 适合后续继续扩展 RBAC、对象存储、Docker 部署、小程序端等能力
+
+<a id="workflow"></a>
+## 业务闭环
+
+```mermaid
+flowchart TD
+    A[用户注册/登录] --> B[提交工单/预约/互助信息]
+    B --> C[系统自动派单或管理员处理]
+    C --> D[处理进度更新]
+    D --> E[消息中心通知用户]
+    E --> F[事项完成]
+    F --> G[用户提交服务评价]
+    G --> H[积分累计与数据沉淀]
+    H --> I[首页统计看板展示]
+```
+
+这个闭环体现了项目从“业务发起”到“处理反馈”再到“评价沉淀”的完整治理流程，是本仓库最适合在首页展示的核心价值之一。
+
+<a id="structure"></a>
 ## 项目结构
 
 ```text
 .
-├─ qianduan/                         # 前端项目
+├─ qianduan/                             # 前端项目
 │  ├─ src/
-│  │  ├─ api/                       # 接口封装
-│  │  ├─ router/                    # 前端路由
-│  │  ├─ stores/                    # Pinia 状态管理
-│  │  ├─ utils/                     # 前端工具方法
-│  │  └─ views/                     # 页面视图
-│  │     ├─ resident/               # 居民管理
-│  │     ├─ activity/               # 社区活动
-│  │     ├─ workorder/              # 工单管理
-│  │     ├─ volunteer/              # 志愿者管理
-│  │     ├─ floating/               # 流动人口
-│  │     ├─ hazard/                 # 治安隐患
-│  │     ├─ guide/                  # 办事指南
-│  │     ├─ appointment/            # 服务预约
-│  │     ├─ neighborhelp/           # 邻里互助
-│  │     ├─ points/                 # 积分中心
-│  │     ├─ message/                # 消息中心
-│  │     ├─ evaluation/             # 服务评价
-│  │     ├─ notice/                 # 通知公告
-│  │     ├─ dispatchrule/           # 派单规则
-│  │     ├─ dashboard/              # 超时看板
-│  │     ├─ log/                    # 操作日志
-│  │     └─ user/                   # 用户管理
+│  │  ├─ api/                           # 接口封装
+│  │  ├─ router/                        # 前端路由
+│  │  ├─ stores/                        # Pinia 状态管理
+│  │  ├─ utils/                         # 工具方法
+│  │  └─ views/                         # 页面视图
+│  │     ├─ activity/                   # 社区活动
+│  │     ├─ appointment/                # 服务预约
+│  │     ├─ dashboard/                  # 工单超时看板
+│  │     ├─ dispatchrule/               # 派单规则
+│  │     ├─ evaluation/                 # 服务评价
+│  │     ├─ floating/                   # 流动人口
+│  │     ├─ guide/                      # 办事指南
+│  │     ├─ hazard/                     # 治安隐患
+│  │     ├─ log/                        # 操作日志
+│  │     ├─ message/                    # 消息中心
+│  │     ├─ neighborhelp/               # 邻里互助
+│  │     ├─ notice/                     # 通知公告
+│  │     ├─ points/                     # 积分中心
+│  │     ├─ resident/                   # 居民管理
+│  │     ├─ user/                       # 用户管理
+│  │     ├─ volunteer/                  # 志愿者管理
+│  │     └─ workorder/                  # 工单管理
 │  ├─ package.json
 │  └─ vite.config.js
-├─ houduan/                          # 后端项目
+├─ houduan/                              # 后端项目
 │  ├─ src/main/java/com/community/
-│  │  ├─ annotation/               # 自定义注解
-│  │  ├─ aspect/                   # AOP 切面
-│  │  ├─ common/                   # 统一返回与常量
-│  │  ├─ config/                   # 系统配置
-│  │  ├─ controller/               # 控制层
-│  │  ├─ entity/                   # 实体类
-│  │  ├─ mapper/                   # 数据访问层
-│  │  ├─ service/                  # 业务层
-│  │  ├─ task/                     # 定时任务
-│  │  └─ utils/                    # 工具类
+│  │  ├─ annotation/                    # 自定义注解
+│  │  ├─ aspect/                        # AOP 切面
+│  │  ├─ common/                        # 通用返回与常量
+│  │  ├─ config/                        # 配置类
+│  │  ├─ controller/                    # 控制层
+│  │  ├─ entity/                        # 实体类
+│  │  ├─ mapper/                        # 数据访问层
+│  │  ├─ service/                       # 业务层
+│  │  ├─ task/                          # 定时任务
+│  │  └─ utils/                         # 工具类
 │  ├─ src/main/resources/
-│  │  ├─ application.yml           # 后端配置
-│  │  └─ sql/                      # 数据库脚本
+│  │  ├─ application.yml                # 后端配置
+│  │  └─ sql/                           # 数据库脚本
 │  └─ pom.xml
 ├─ API_DOC.md
 ├─ 环境配置指南.md
 └─ README.md
 ```
 
-## 数据库脚本说明
-
-项目数据库脚本位于 `houduan/src/main/resources/sql`，推荐按以下顺序执行：
-
-1. `init.sql`：初始化基础库表与基础测试数据
-2. `sprint1_message.sql`：补充消息中心相关表
-3. `sprint1_points.sql`：补充积分系统相关表
-4. `sprint2_workorder_overtime.sql`：补充工单超时治理字段与索引
-5. `sprint3_p1_evaluation_dispatch.sql`：补充服务评价与自动派单规则
-6. `indexes.sql`：补充索引优化脚本（如有需要）
-
-数据库默认名称为 `community_service`。
-
-## 环境要求
-
-在本地运行本项目前，建议准备以下环境：
-
-- JDK 17
-- Maven 3.8+
-- Node.js 18+
-- MySQL 8.0
-- Redis 6+
-
-其中后端默认启用了 Redis 缓存能力，因此建议在启动后端前确保本地 Redis 服务可用。
-
+<a id="quickstart"></a>
 ## 快速启动
 
-### 1. 克隆项目
+### 环境要求
+
+- `JDK 17`
+- `Maven 3.8+`
+- `Node.js 18+`
+- `MySQL 8.0`
+- `Redis 6+`
+
+### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/你的GitHub用户名/community-management-platform.git
+git clone https://github.com/Hr-byte-art/community-management-platform.git
 cd community-management-platform
 ```
 
 ### 2. 初始化数据库
 
-- 创建 MySQL 数据库并执行上述 SQL 脚本
-- 如本地数据库账号、密码、端口与项目默认配置不一致，请修改 `houduan/src/main/resources/application.yml`
+项目数据库名默认为 `community_service`，SQL 脚本位于 `houduan/src/main/resources/sql`。
+
+如果你的本地数据库账号、密码或端口不同，请修改：
+
+- `houduan/src/main/resources/application.yml`
 
 ### 3. 启动后端
 
@@ -197,9 +217,8 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-后端默认启动地址：`http://localhost:8080`
-
-Swagger 文档地址：`http://localhost:8080/swagger-ui/index.html`
+- 后端地址：`http://localhost:8080`
+- Swagger 地址：`http://localhost:8080/swagger-ui/index.html`
 
 ### 4. 启动前端
 
@@ -209,13 +228,34 @@ npm install
 npm run dev
 ```
 
-前端默认启动地址：`http://localhost:5173`
+- 前端地址：`http://localhost:5173`
+- 已配置开发代理：`/api -> http://localhost:8080`
 
-项目已经在 `qianduan/vite.config.js` 中配置了 `/api -> http://localhost:8080` 的开发代理。
+<a id="database"></a>
+## 数据库脚本
 
+推荐按以下顺序执行脚本：
+
+1. `houduan/src/main/resources/sql/init.sql`
+2. `houduan/src/main/resources/sql/sprint1_message.sql`
+3. `houduan/src/main/resources/sql/sprint1_points.sql`
+4. `houduan/src/main/resources/sql/sprint2_workorder_overtime.sql`
+5. `houduan/src/main/resources/sql/sprint3_p1_evaluation_dispatch.sql`
+6. `houduan/src/main/resources/sql/indexes.sql`
+
+对应能力如下：
+
+| 脚本 | 作用 |
+| --- | --- |
+| `init.sql` | 初始化基础表结构与演示数据 |
+| `sprint1_message.sql` | 新增消息中心相关表 |
+| `sprint1_points.sql` | 新增积分账户与积分流水 |
+| `sprint2_workorder_overtime.sql` | 增加工单超时治理字段与索引 |
+| `sprint3_p1_evaluation_dispatch.sql` | 增加服务评价与自动派单规则 |
+| `indexes.sql` | 补充索引优化 |
+
+<a id="accounts"></a>
 ## 默认账号
-
-初始化脚本中提供了部分演示账号，常见示例如下：
 
 | 用户名 | 密码 | 角色 |
 | --- | --- | --- |
@@ -224,80 +264,45 @@ npm run dev
 | `zhangsan` | `123456` | 普通用户 |
 | `lisi` | `123456` | 普通用户 |
 
-说明：数据库中保存的是加密后的密码值，登录时使用的明文密码为 `123456`。
+说明：数据库中存储的是加密后的密码值，登录时使用明文密码 `123456`。
 
-## 页面导航概览
+<a id="docs"></a>
+## 文档入口
 
-系统主要页面包括：
+- 接口说明：[`API_DOC.md`](./API_DOC.md)
+- 环境配置：[`环境配置指南.md`](./环境配置指南.md)
+- 数据库初始化：[`houduan/src/main/resources/sql/init.sql`](./houduan/src/main/resources/sql/init.sql)
+- 前端入口：[`qianduan/src/main.js`](./qianduan/src/main.js)
+- 后端启动类：[`houduan/src/main/java/com/community/CommunityApplication.java`](./houduan/src/main/java/com/community/CommunityApplication.java)
 
-- 首页数据看板
-- 居民管理
-- 社区活动
-- 工单管理
-- 工单超时看板
-- 志愿者管理
-- 流动人口
-- 治安隐患
-- 办事指南
-- 服务预约
-- 邻里互助
-- 积分中心
-- 消息中心
-- 服务评价
-- 通知公告
-- 用户管理
-- 派单规则
-- 操作日志
-- 个人中心
-
-其中部分系统管理能力仅管理员可见。
-
-## 接口与后端能力说明
-
-后端提供了较完整的业务接口能力，包含但不限于：
-
-- `/auth`：登录注册
-- `/user`：用户信息与后台用户管理
-- `/resident`：居民信息与家庭关系维护
-- `/activity`：社区活动与报名
-- `/workorder`：工单创建、流转、处理、统计
-- `/dispatch/rule`：自动派单规则维护
-- `/evaluation`：服务评价闭环
-- `/message`：消息中心
-- `/points`：积分账户与排行
-- `/notice`：通知公告
-- `/statistics`：首页统计数据
-- `/export`：Excel 导出接口
-- `/file`：文件上传接口
-- `/log`：操作日志管理
-
+<a id="scenes"></a>
 ## 适用场景
 
-本项目适用于以下场景：
+- 毕业设计答辩展示
+- 软件工程课程设计
+- Spring Boot + Vue 前后端分离综合实训
+- 社区治理信息化平台原型设计
+- 含权限、业务、统计、日志、导出完整链路的练手项目
 
-- 毕业设计与课程设计展示
-- 社区治理信息化系统原型
-- Spring Boot + Vue 前后端分离综合实训项目
-- 含“用户、业务、统计、权限、日志、导出”完整链路的练手项目
+<a id="notes"></a>
+## 注意事项
+
+- 首次运行前请先执行数据库脚本
+- 后端启用了 Redis 缓存，建议启动服务前先确认本地 Redis 可用
+- 若准备公开仓库，建议优先检查并脱敏数据库、Redis、JWT 等敏感配置
+- 当前项目更偏向教学、演示与毕设场景，生产环境落地前仍建议补充安全与运维能力
 
 ## 后续可扩展方向
 
-如果你后续还要继续完善项目，可以从以下方向迭代：
-
 - 引入更细粒度的 RBAC 权限控制
-- 增加文件对象存储与图片压缩能力
-- 增加短信 / 邮件通知能力
-- 引入 Docker 与 CI/CD 部署流程
+- 升级密码加密方案为 `BCrypt`
+- 增加对象存储、图片压缩与 CDN 支持
+- 增加短信、邮件、站内推送等通知通道
+- 增加 Docker 部署与 CI/CD 流程
 - 对接小程序端或移动端
-- 将密码加密方式升级为 BCrypt
-- 将数据库、Redis、JWT 等敏感配置迁移到环境变量
 
-## 注意事项
+---
 
-- 首次运行前请务必先初始化数据库脚本
-- 若准备将项目公开上传到 GitHub，建议先检查并脱敏本地数据库、Redis、JWT 等敏感配置
-- 当前项目更偏向教学 / 演示 / 毕设场景，生产环境落地前建议进一步补充安全与运维能力
-
-## 致谢
-
-感谢你对社区治理数字化场景的关注。这个项目既可以作为完整的毕业设计作品，也可以作为持续扩展的业务原型基础。
+<div align="center">
+  <sub>如果这个项目对你有帮助，欢迎点一个 Star ⭐</sub>
+</div>
