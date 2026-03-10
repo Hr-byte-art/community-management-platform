@@ -1,0 +1,67 @@
+package com.community.controller;
+
+import com.community.annotation.Log;
+import com.community.common.Result;
+import com.community.entity.SecurityHazard;
+import com.community.service.SecurityHazardService;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
+
+@RestController
+@RequestMapping("/hazard")
+public class SecurityHazardController {
+    @Autowired
+    private SecurityHazardService hazardService;
+
+    @GetMapping("/list")
+    public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
+                          @RequestParam(defaultValue = "10") Integer pageSize,
+                          String title, String hazardType, Integer status) {
+        return Result.success(hazardService.pageQuery(pageNum, pageSize, title, hazardType, status));
+    }
+
+    @GetMapping("/{id}")
+    public Result<?> getById(@PathVariable Long id) {
+        return Result.success(hazardService.getById(id));
+    }
+
+    @Log("上报安全隐患")
+    @PostMapping
+    public Result<?> add(@RequestBody SecurityHazard hazard, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        hazard.setReporterId(userId);
+        hazard.setStatus(0);
+        hazardService.save(hazard);
+        return Result.success();
+    }
+
+    @Log("编辑隐患信息")
+    @PutMapping("/{id}")
+    public Result<?> update(@PathVariable Long id, @RequestBody SecurityHazard hazard) {
+        hazard.setId(id);
+        hazardService.updateById(hazard);
+        return Result.success();
+    }
+
+    @Log("处理隐患")
+    @PutMapping("/{id}/handle")
+    public Result<?> handle(@PathVariable Long id, @RequestBody SecurityHazard hazard, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        SecurityHazard h = hazardService.getById(id);
+        h.setHandlerId(userId);
+        h.setStatus(hazard.getStatus());
+        h.setHandleResult(hazard.getHandleResult());
+        h.setHandleTime(LocalDateTime.now());
+        hazardService.updateById(h);
+        return Result.success();
+    }
+
+    @Log("删除隐患")
+    @DeleteMapping("/{id}")
+    public Result<?> delete(@PathVariable Long id) {
+        hazardService.removeById(id);
+        return Result.success();
+    }
+}

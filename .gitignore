@@ -1,0 +1,51 @@
+# IDE / 编辑器
+.idea/
+.vscode/
+*.iml
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 环境变量
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# 前端依赖与构建产物
+qianduan/node_modules/
+qianduan/dist/
+qianduan/.vite/
+
+# 后端构建产物
+houduan/target/
+
+# 通用缓存目录
+coverage/
+.cache/
+tmp/
+temp/
+
+# Java
+*.class
+./.idea
+./target
+
+# 压缩包与本地数据库文件
+*.zip
+*.tar
+*.gz
+*.7z
+*.db
+*.sqlite
+*.sqlite3
+
+*.md
