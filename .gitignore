@@ -52,3 +52,6 @@ temp/
 # Keep root README visible in Git
 !/README.md
 !/扩展规划.md
+
+# 私密文件
+houduan/src/main/resources/application-local.yml
