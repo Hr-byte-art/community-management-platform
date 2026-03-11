@@ -16,7 +16,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">发布通知</el-button>
+          <el-button v-if="userStore.hasPerm('btn.notice.add')" type="success" @click="handleAdd">发布通知</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -38,8 +38,8 @@
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.notice.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="userStore.hasPerm('btn.notice.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -81,7 +81,9 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { noticeApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 
+const userStore = useUserStore()
 const typeMap = { NOTICE: '通知', ANNOUNCEMENT: '公告', NEWS: '新闻' }
 const statusMap = { 0: '草稿', 1: '已发布', 2: '已下架' }
 const statusType = { 0: 'info', 1: 'success', 2: 'warning' }

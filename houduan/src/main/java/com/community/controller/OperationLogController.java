@@ -20,14 +20,14 @@ public class OperationLogController {
         return Result.success(logService.pageQuery(pageNum, pageSize, username, operation));
     }
 
-    @Auth
+    @Auth(permissions = {"btn.log.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         logService.removeById(id);
         return Result.success();
     }
 
-    @Auth
+    @Auth(permissions = {"btn.log.clear"})
     @DeleteMapping("/clear")
     public Result<?> clear() {
         logService.remove(null);

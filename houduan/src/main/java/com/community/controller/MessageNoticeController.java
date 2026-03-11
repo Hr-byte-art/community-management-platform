@@ -37,6 +37,7 @@ public class MessageNoticeController {
         return Result.success(messageNoticeService.unreadCount(userId));
     }
 
+    @Auth(value = "", permissions = {"btn.message.read"})
     @PutMapping("/{id}/read")
     public Result<?> markRead(@PathVariable Long id, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -46,6 +47,7 @@ public class MessageNoticeController {
         return Result.success();
     }
 
+    @Auth(value = "", permissions = {"btn.message.read_all"})
     @PutMapping("/read-all")
     public Result<?> markAllRead(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -53,7 +55,7 @@ public class MessageNoticeController {
         return Result.success();
     }
 
-    @Auth
+    @Auth(permissions = {"btn.message.admin_list", "scope.message.all"})
     @GetMapping("/admin/list")
     public Result<?> adminList(@RequestParam(defaultValue = "1") Integer pageNum,
                                @RequestParam(defaultValue = "10") Integer pageSize,

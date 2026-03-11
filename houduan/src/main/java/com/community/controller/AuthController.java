@@ -4,6 +4,7 @@ import com.community.annotation.Log;
 import com.community.common.Result;
 import com.community.common.Constants;
 import com.community.entity.SysUser;
+import com.community.service.SysPermissionService;
 import com.community.service.SysUserService;
 import com.community.utils.JwtUtil;
 import com.community.utils.PasswordEncoderUtil;
@@ -11,6 +12,7 @@ import com.community.utils.ValidationUtil;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +21,8 @@ import java.util.Map;
 public class AuthController {
     @Autowired
     private SysUserService userService;
+    @Autowired
+    private SysPermissionService sysPermissionService;
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -33,9 +37,11 @@ public class AuthController {
             return Result.error("账号已被禁用");
         }
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
+        user.setPassword(null);
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
         data.put("user", user);
+        data.put("permissions", sysPermissionService.listPermissionCodesByRole(user.getRole()));
         return Result.success(data);
     }
 
@@ -45,18 +51,15 @@ public class AuthController {
         if (userService.findByUsername(user.getUsername()) != null) {
             return Result.error("用户名已存在");
         }
-        // 验证手机号格式
         if (!ValidationUtil.isValidPhone(user.getPhone())) {
             return Result.error("手机号格式不正确");
         }
-        // 检查手机号是否已存在
         if (userService.existsByPhone(user.getPhone(), null)) {
             return Result.error("手机号已存在");
         }
-        // 对密码进行加密
         user.setPassword(PasswordEncoderUtil.encode(user.getPassword()));
-        user.setRole(Constants.Role.USER); // 使用常量
-        user.setStatus(Constants.UserStatus.ENABLED); // 使用常量
+        user.setRole(Constants.Role.USER);
+        user.setStatus(Constants.UserStatus.ENABLED);
         user.setAvatar("https://tu.ltyuanfang.cn/api/fengjing.php");
         userService.save(user);
         return Result.success();

@@ -1,5 +1,6 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Result;
 import com.community.common.Constants;
@@ -8,6 +9,7 @@ import com.community.entity.NoticeReadRecord;
 import com.community.entity.SysUser;
 import com.community.service.NoticeService;
 import com.community.service.NoticeReadRecordService;
+import com.community.service.SysPermissionService;
 import com.community.service.SysUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,18 +27,32 @@ public class NoticeController {
     private NoticeReadRecordService readRecordService;
     @Autowired
     private SysUserService sysUserService;
+    @Autowired
+    private SysPermissionService sysPermissionService;
 
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
                           @RequestParam(defaultValue = "10") Integer pageSize,
-                          String title, String noticeType, Integer status) {
-        return Result.success(noticeService.pageQuery(pageNum, pageSize, title, noticeType, status));
+                          String title, String noticeType, Integer status,
+                          HttpServletRequest request) {
+        String role = (String) request.getAttribute("role");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.notice.all", Constants.Role.ADMIN.equals(role));
+        Integer queryStatus = canViewAll ? status : Constants.NoticeStatus.PUBLISHED;
+        return Result.success(noticeService.pageQuery(pageNum, pageSize, title, noticeType, queryStatus));
     }
 
     @GetMapping("/{id}")
     public Result<?> getById(@PathVariable Long id, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
+        String role = (String) request.getAttribute("role");
         Notice notice = noticeService.getById(id);
+        if (notice == null) {
+            return Result.error("公告不存在");
+        }
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.notice.all", Constants.Role.ADMIN.equals(role));
+        if (!canViewAll && !Constants.NoticeStatus.PUBLISHED.equals(notice.getStatus())) {
+            return Result.error("无权限查看该公告");
+        }
         notice.setViewCount(notice.getViewCount() + 1);
         noticeService.updateById(notice);
         if (!readRecordService.hasRead(id, userId)) {
@@ -49,6 +65,7 @@ public class NoticeController {
         return Result.success(notice);
     }
 
+    @Auth(permissions = {"btn.notice.stats"})
     @GetMapping("/{id}/stats")
     public Result<?> getStats(@PathVariable Long id, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -68,6 +85,7 @@ public class NoticeController {
     }
 
     @Log("发布公告")
+    @Auth(permissions = {"btn.notice.add"})
     @PostMapping
     public Result<?> add(@RequestBody Notice notice, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -92,6 +110,7 @@ public class NoticeController {
     }
 
     @Log("编辑公告")
+    @Auth(permissions = {"btn.notice.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody Notice notice, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -124,6 +143,7 @@ public class NoticeController {
     }
 
     @Log("删除公告")
+    @Auth(permissions = {"btn.notice.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id, HttpServletRequest request) {
         String role = (String) request.getAttribute("role");

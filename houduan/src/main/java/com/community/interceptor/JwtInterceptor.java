@@ -18,8 +18,13 @@ public class JwtInterceptor implements HandlerInterceptor {
             return true;
         }
         String token = request.getHeader("Authorization");
+        if ((token == null || token.isBlank()) && request.getParameter("token") != null) {
+            token = request.getParameter("token");
+        }
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
+        }
+        if (token != null && !token.isBlank()) {
             if (jwtUtil.validateToken(token)) {
                 request.setAttribute("userId", jwtUtil.getUserId(token));
                 request.setAttribute("username", jwtUtil.getUsername(token));

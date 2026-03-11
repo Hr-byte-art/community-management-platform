@@ -16,7 +16,7 @@
           <el-input v-model="form.email" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleUpdate">保存修改</el-button>
+          <el-button v-if="userStore.hasPerm('btn.profile.update')" type="primary" @click="handleUpdate">保存修改</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -30,7 +30,7 @@
           <el-input v-model="pwdForm.newPassword" type="password" show-password />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleUpdatePwd">修改密码</el-button>
+          <el-button v-if="userStore.hasPerm('btn.profile.password')" type="primary" @click="handleUpdatePwd">修改密码</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -56,13 +56,16 @@ const rules = {
 
 onMounted(async () => {
   const res = await userApi.getInfo()
-  form.value = res.data
+  form.value = res.data.user || res.data
+  if (Array.isArray(res.data.permissions)) {
+    userStore.setPermissions(res.data.permissions)
+  }
 })
 
 const handleUpdate = async () => {
   if (!formRef.value) return
   await formRef.value.validate()
-  
+
   await userApi.update(form.value)
   userStore.user.realName = form.value.realName
   userStore.user.phone = form.value.phone
@@ -80,3 +83,4 @@ const handleUpdatePwd = async () => {
   pwdForm.value = { oldPassword: '', newPassword: '' }
 }
 </script>
+

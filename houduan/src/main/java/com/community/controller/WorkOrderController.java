@@ -1,5 +1,6 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Constants;
 import com.community.common.Result;
@@ -7,6 +8,7 @@ import com.community.entity.WorkOrder;
 import com.community.service.GridDispatchRuleService;
 import com.community.service.MessageNoticeService;
 import com.community.service.ServiceEvaluationService;
+import com.community.service.SysPermissionService;
 import com.community.service.WorkOrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ public class WorkOrderController {
     private GridDispatchRuleService gridDispatchRuleService;
     @Autowired
     private ServiceEvaluationService serviceEvaluationService;
+    @Autowired
+    private SysPermissionService sysPermissionService;
 
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
@@ -40,8 +44,9 @@ public class WorkOrderController {
                           HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.workorder.all", Constants.Role.ADMIN.equals(role));
 
-        if (Constants.Role.ADMIN.equals(role)) {
+        if (canViewAll) {
             return Result.success(workOrderService.pageQueryForAdmin(
                     pageNum, pageSize, title, orderType, status, assigneeId, isOvertime, deadlineStart, deadlineEnd));
         } else {
@@ -56,13 +61,14 @@ public class WorkOrderController {
     public Result<?> getById(@PathVariable Long id, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.workorder.all", Constants.Role.ADMIN.equals(role));
 
         WorkOrder workOrder = workOrderService.getById(id);
         if (workOrder == null) {
             return Result.error("工单不存在");
         }
 
-        if (!Constants.Role.ADMIN.equals(role) && !workOrder.getSubmitterId().equals(userId)) {
+        if (!canViewAll && !workOrder.getSubmitterId().equals(userId)) {
             return Result.error("无权限查看该工单");
         }
 
@@ -70,6 +76,7 @@ public class WorkOrderController {
     }
 
     @Log("Submit Work Order")
+    @Auth(value = "", permissions = {"btn.workorder.add"})
     @PostMapping
     @Transactional
     public Result<?> add(@RequestBody WorkOrder workOrder, HttpServletRequest request) {
@@ -102,25 +109,27 @@ public class WorkOrderController {
     }
 
     @Log("Update Work Order")
+    @Auth(value = "", permissions = {"btn.workorder.edit"})
     @PutMapping("/{id}")
     @Transactional
     public Result<?> update(@PathVariable Long id, @RequestBody WorkOrder workOrder, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.workorder.all", Constants.Role.ADMIN.equals(role));
 
         WorkOrder existingOrder = workOrderService.getById(id);
         if (existingOrder == null) {
             return Result.error("工单不存在");
         }
 
-        if (!existingOrder.getSubmitterId().equals(userId) && !Constants.Role.ADMIN.equals(role)) {
+        if (!existingOrder.getSubmitterId().equals(userId) && !canViewAll) {
             return Result.error("无权限更新该工单");
         }
 
         workOrder.setId(id);
         workOrder.setSubmitterId(existingOrder.getSubmitterId());
 
-        if (!Constants.Role.ADMIN.equals(role)) {
+        if (!canViewAll) {
             workOrder.setStatus(existingOrder.getStatus());
             workOrder.setHandlerId(existingOrder.getHandlerId());
             workOrder.setAssigneeId(existingOrder.getAssigneeId());
@@ -134,11 +143,13 @@ public class WorkOrderController {
     }
 
     @Log("Handle Work Order")
+    @Auth(value = "", permissions = {"btn.workorder.handle"})
     @PutMapping("/{id}/handle")
     @Transactional
     public Result<?> handle(@PathVariable Long id, @RequestBody WorkOrder workOrder, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.workorder.all", Constants.Role.ADMIN.equals(role));
 
         if (!Constants.Role.ADMIN.equals(role)) {
             return Result.error("无权限处理工单");
@@ -183,18 +194,20 @@ public class WorkOrderController {
     }
 
     @Log("Delete Work Order")
+    @Auth(value = "", permissions = {"btn.workorder.delete"})
     @DeleteMapping("/{id}")
     @Transactional
     public Result<?> delete(@PathVariable Long id, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.workorder.all", Constants.Role.ADMIN.equals(role));
 
         WorkOrder workOrder = workOrderService.getById(id);
         if (workOrder == null) {
             return Result.error("工单不存在");
         }
 
-        if (!workOrder.getSubmitterId().equals(userId) && !Constants.Role.ADMIN.equals(role)) {
+        if (!workOrder.getSubmitterId().equals(userId) && !canViewAll) {
             return Result.error("无权限删除该工单");
         }
 

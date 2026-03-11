@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <el-card>
       <template #header>
@@ -33,7 +33,7 @@
             </el-table-column>
             <el-table-column label="操作" width="140" fixed="right">
               <template #default="{ row }">
-                <el-button type="primary" link @click="openEvaluation(row)">去评价</el-button>
+                <el-button v-if="userStore.hasPerm('btn.evaluation.submit')" type="primary" link @click="openEvaluation(row)">去评价</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -112,7 +112,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEvaluation">提交</el-button>
+        <el-button v-if="userStore.hasPerm('btn.evaluation.submit')" type="primary" @click="submitEvaluation">提交</el-button>
       </template>
     </el-dialog>
   </div>
@@ -125,7 +125,7 @@ import { evaluationApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
-const isAdmin = computed(() => userStore.isAdmin())
+const isAdmin = computed(() => userStore.hasAnyPerm(['btn.evaluation.admin_list', 'btn.evaluation.stats']))
 
 const activeTab = ref('todo')
 const loading = ref(false)
@@ -252,3 +252,4 @@ onMounted(loadAll)
   margin-bottom: 12px;
 }
 </style>
+

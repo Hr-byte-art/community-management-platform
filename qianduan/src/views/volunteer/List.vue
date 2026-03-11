@@ -11,7 +11,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleApply">申请成为志愿者</el-button>
+          <el-button v-if="userStore.hasPerm('btn.volunteer.apply')" type="success" @click="handleApply">申请成为志愿者</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -28,11 +28,11 @@
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <template v-if="row.status === 0">
-              <el-button link type="success" @click="handleAudit(row, 1)">通过</el-button>
-              <el-button link type="danger" @click="handleAudit(row, 2)">拒绝</el-button>
+              <el-button v-if="userStore.hasPerm('btn.volunteer.audit')" link type="success" @click="handleAudit(row, 1)">通过</el-button>
+              <el-button v-if="userStore.hasPerm('btn.volunteer.audit')" link type="danger" @click="handleAudit(row, 2)">拒绝</el-button>
             </template>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.volunteer.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="userStore.hasPerm('btn.volunteer.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -62,8 +62,10 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { volunteerApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 import { phoneRule } from '../../utils/validation'
 
+const userStore = useUserStore()
 const statusMap = { 0: '待审核', 1: '已通过', 2: '已拒绝' }
 const statusType = { 0: 'warning', 1: 'success', 2: 'danger' }
 const query = ref({ pageNum: 1, pageSize: 10, name: '', status: null })

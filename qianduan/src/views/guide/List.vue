@@ -12,7 +12,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">发布指南</el-button>
+          <el-button v-if="userStore.hasPerm('btn.guide.add')" type="success" @click="handleAdd">发布指南</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -25,8 +25,8 @@
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.guide.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="userStore.hasPerm('btn.guide.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -58,8 +58,10 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { guideApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 import { contactRule } from '../../utils/validation'
 
+const userStore = useUserStore()
 const categoryMap = { CERTIFICATE: '证件办理', SOCIAL: '社保', HOUSING: '住房', OTHER: '其他' }
 const query = ref({ pageNum: 1, pageSize: 10, title: '', category: '' })
 const tableData = ref([])

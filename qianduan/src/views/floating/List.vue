@@ -11,7 +11,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">登记流动人口</el-button>
+          <el-button v-if="userStore.hasPerm('btn.floating.add')" type="success" @click="handleAdd">登记流动人口</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -30,8 +30,8 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.floating.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="userStore.hasPerm('btn.floating.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -69,8 +69,10 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { floatingApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 import { idCardRule, phoneRule } from '../../utils/validation'
 
+const userStore = useUserStore()
 const query = ref({ pageNum: 1, pageSize: 10, name: '', status: null })
 const tableData = ref([])
 const total = ref(0)
@@ -140,3 +142,4 @@ const handleReset = () => {
 
 onMounted(loadData)
 </script>
+

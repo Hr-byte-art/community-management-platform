@@ -1,5 +1,6 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Result;
 import com.community.entity.ServiceGuide;
@@ -29,6 +30,7 @@ public class ServiceGuideController {
     }
 
     @Log("发布办事指南")
+    @Auth(permissions = {"btn.guide.add"})
     @PostMapping
     public Result<?> add(@RequestBody ServiceGuide guide) {
         guide.setViewCount(0);
@@ -38,6 +40,7 @@ public class ServiceGuideController {
     }
 
     @Log("编辑办事指南")
+    @Auth(permissions = {"btn.guide.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody ServiceGuide guide) {
         guide.setId(id);
@@ -46,6 +49,7 @@ public class ServiceGuideController {
     }
 
     @Log("删除办事指南")
+    @Auth(permissions = {"btn.guide.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         guideService.removeById(id);

@@ -2,6 +2,7 @@ package com.community.controller;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
+import com.community.annotation.Auth;
 import com.community.entity.*;
 import com.community.service.*;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +25,7 @@ public class ExportController {
     private FloatingPopulationService floatingService;
 
     @GetMapping("/resident")
+    @Auth(permissions = {"btn.resident.export"})
     public void exportResident(HttpServletResponse response) throws Exception {
         setExcelResponse(response, "居民信息");
         List<Resident> list = residentService.list();
@@ -33,6 +35,7 @@ public class ExportController {
     }
 
     @GetMapping("/workorder")
+    @Auth(permissions = {"btn.workorder.export"})
     public void exportWorkOrder(HttpServletResponse response) throws Exception {
         setExcelResponse(response, "工单数据");
         List<WorkOrder> list = workOrderService.list();
@@ -42,6 +45,7 @@ public class ExportController {
     }
 
     @GetMapping("/activity")
+    @Auth
     public void exportActivity(HttpServletResponse response) throws Exception {
         setExcelResponse(response, "活动数据");
         List<CommunityActivity> list = activityService.list();
@@ -51,6 +55,7 @@ public class ExportController {
     }
 
     @GetMapping("/floating")
+    @Auth
     public void exportFloating(HttpServletResponse response) throws Exception {
         setExcelResponse(response, "流动人口");
         List<FloatingPopulation> list = floatingService.list();

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <el-card>
       <template #header>
@@ -6,7 +6,7 @@
           <span>消息中心</span>
           <div class="header-actions">
             <el-tag type="warning">未读 {{ unreadCount }}</el-tag>
-            <el-button type="primary" plain @click="markAllRead">全部标记已读</el-button>
+            <el-button v-if="userStore.hasPerm('btn.message.read_all')" type="primary" plain @click="markAllRead">全部标记已读</el-button>
             <el-button @click="loadCurrent">刷新</el-button>
           </div>
         </div>
@@ -44,7 +44,7 @@
             <el-table-column prop="content" label="内容" min-width="220" show-overflow-tooltip />
             <el-table-column label="操作" width="100" fixed="right">
               <template #default="{ row }">
-                <el-button link type="primary" :disabled="row.isRead === 1" @click="markRead(row)">已读</el-button>
+                <el-button v-if="userStore.hasPerm('btn.message.read')" link type="primary" :disabled="row.isRead === 1" @click="markRead(row)">已读</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -113,7 +113,7 @@ import { messageApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
-const isAdmin = computed(() => userStore.isAdmin())
+const isAdmin = computed(() => userStore.hasPerm('btn.message.admin_list'))
 
 const loading = ref(false)
 const unreadCount = ref(0)
@@ -221,3 +221,4 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 </style>
+

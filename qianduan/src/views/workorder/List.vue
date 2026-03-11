@@ -18,8 +18,8 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">提交工单</el-button>
-          <el-button type="warning" @click="handleExport">导出Excel</el-button>
+          <el-button v-if="userStore.hasPerm('btn.workorder.add')" type="success" @click="handleAdd">提交工单</el-button>
+          <el-button v-if="userStore.hasPerm('btn.workorder.export')" type="warning" @click="handleExport">导出Excel</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -40,10 +40,10 @@
         <el-table-column prop="createTime" label="提交时间" width="160" />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleHandle(row)" v-if="row.status < 2">处理</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleHandle(row)" v-if="row.status < 2 && userStore.hasPerm('btn.workorder.handle')">处理</el-button>
+            <el-button link type="primary" @click="handleEdit(row)" v-if="userStore.hasPerm('btn.workorder.edit')">编辑</el-button>
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="danger" @click="handleDelete(row)" v-if="userStore.hasPerm('btn.workorder.delete')">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

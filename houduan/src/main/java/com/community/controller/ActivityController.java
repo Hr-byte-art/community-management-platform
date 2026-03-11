@@ -1,5 +1,6 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Result;
 import com.community.entity.CommunityActivity;
@@ -27,6 +28,7 @@ public class ActivityController {
     }
 
     @Log("发布活动")
+    @Auth(permissions = {"btn.activity.add"})
     @PostMapping
     public Result<?> add(@RequestBody CommunityActivity activity, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -39,6 +41,7 @@ public class ActivityController {
     }
 
     @Log("编辑活动")
+    @Auth(permissions = {"btn.activity.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody CommunityActivity activity) {
         activity.setId(id);
@@ -47,6 +50,7 @@ public class ActivityController {
     }
 
     @Log("删除活动")
+    @Auth(permissions = {"btn.activity.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         activityService.removeById(id);

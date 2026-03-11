@@ -29,7 +29,7 @@ public class FloatingPopulationController {
     }
 
     @Log("登记流动人口")
-    @Auth
+    @Auth(permissions = {"btn.floating.add"})
     @PostMapping
     public Result<?> add(@RequestBody FloatingPopulation population) {
         floatingPopulationService.save(population);
@@ -37,7 +37,7 @@ public class FloatingPopulationController {
     }
 
     @Log("编辑流动人口信息")
-    @Auth
+    @Auth(permissions = {"btn.floating.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody FloatingPopulation population) {
         population.setId(id);
@@ -46,7 +46,7 @@ public class FloatingPopulationController {
     }
 
     @Log("删除流动人口信息")
-    @Auth
+    @Auth(permissions = {"btn.floating.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         floatingPopulationService.removeById(id);

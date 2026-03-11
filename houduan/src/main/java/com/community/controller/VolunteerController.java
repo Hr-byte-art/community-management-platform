@@ -1,10 +1,12 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Constants;
 import com.community.common.Result;
 import com.community.entity.Volunteer;
 import com.community.service.MessageNoticeService;
+import com.community.service.SysPermissionService;
 import com.community.service.VolunteerService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,14 +22,17 @@ public class VolunteerController {
     private VolunteerService volunteerService;
     @Autowired
     private MessageNoticeService messageNoticeService;
+    @Autowired
+    private SysPermissionService sysPermissionService;
 
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
                           @RequestParam(defaultValue = "10") Integer pageSize,
                           String name, Integer status, HttpServletRequest request) {
         String role = (String) request.getAttribute("role");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.volunteer.all", Constants.Role.ADMIN.equals(role));
 
-        if (Constants.Role.ADMIN.equals(role)) {
+        if (canViewAll) {
             return Result.success(volunteerService.pageQuery(pageNum, pageSize, name, status));
         } else {
             return Result.success(volunteerService.pageQuery(pageNum, pageSize, name, Constants.VolunteerStatus.APPROVED));
@@ -38,13 +43,14 @@ public class VolunteerController {
     public Result<?> getById(@PathVariable Long id, HttpServletRequest request) {
         String role = (String) request.getAttribute("role");
         Long userId = (Long) request.getAttribute("userId");
+        boolean canViewAll = sysPermissionService.hasPermission(role, "scope.volunteer.all", Constants.Role.ADMIN.equals(role));
 
         Volunteer volunteer = volunteerService.getById(id);
         if (volunteer == null) {
             return Result.error("志愿者记录不存在");
         }
 
-        if (Constants.Role.ADMIN.equals(role)
+        if (canViewAll
                 || volunteer.getUserId().equals(userId)
                 || Constants.VolunteerStatus.APPROVED.equals(volunteer.getStatus())) {
             return Result.success(volunteer);
@@ -54,6 +60,7 @@ public class VolunteerController {
     }
 
     @Log("申请成为志愿者")
+    @Auth(value = "", permissions = {"btn.volunteer.apply"})
     @PostMapping("/apply")
     @Transactional
     public Result<?> apply(@RequestBody Volunteer volunteer, HttpServletRequest request) {
@@ -71,6 +78,7 @@ public class VolunteerController {
     }
 
     @Log("审核志愿者申请")
+    @Auth(permissions = {"btn.volunteer.audit"})
     @PutMapping("/{id}/audit")
     @Transactional
     public Result<?> audit(@PathVariable Long id, @RequestParam Integer status, HttpServletRequest request) {
@@ -117,6 +125,7 @@ public class VolunteerController {
     }
 
     @Log("编辑志愿者信息")
+    @Auth(value = "", permissions = {"btn.volunteer.edit"})
     @PutMapping("/{id}")
     @Transactional
     public Result<?> update(@PathVariable Long id, @RequestBody Volunteer volunteer, HttpServletRequest request) {
@@ -142,6 +151,7 @@ public class VolunteerController {
     }
 
     @Log("删除志愿者申请")
+    @Auth(value = "", permissions = {"btn.volunteer.delete"})
     @DeleteMapping("/{id}")
     @Transactional
     public Result<?> delete(@PathVariable Long id, HttpServletRequest request) {

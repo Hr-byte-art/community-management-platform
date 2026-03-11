@@ -25,6 +25,7 @@ public class ServiceEvaluationController {
         this.workOrderService = workOrderService;
     }
 
+    @Auth(value = "", permissions = {"btn.evaluation.submit"})
     @PostMapping("/workorder/{workOrderId}")
     public Result<?> submit(@PathVariable Long workOrderId,
                             @RequestBody ServiceEvaluation payload,
@@ -67,7 +68,7 @@ public class ServiceEvaluationController {
         return Result.success(page);
     }
 
-    @Auth
+    @Auth(permissions = {"btn.evaluation.admin_list", "scope.evaluation.all"})
     @GetMapping("/admin/list")
     public Result<?> adminList(@RequestParam(defaultValue = "1") Integer pageNum,
                                @RequestParam(defaultValue = "10") Integer pageSize,
@@ -76,7 +77,7 @@ public class ServiceEvaluationController {
         return Result.success(serviceEvaluationService.pageAll(pageNum, pageSize, score, userId));
     }
 
-    @Auth
+    @Auth(permissions = {"btn.evaluation.stats", "scope.evaluation.all"})
     @GetMapping("/stats")
     public Result<?> stats() {
         return Result.success(serviceEvaluationService.stats());

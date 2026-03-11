@@ -32,7 +32,7 @@ public class ResidentController {
         return Result.success(residentService.getById(id));
     }
 
-    @Auth
+    @Auth(permissions = {"btn.resident.add"})
     @Log("新增居民")
     @PostMapping
     public Result<?> add(@RequestBody Resident resident) {
@@ -56,7 +56,7 @@ public class ResidentController {
         return Result.success();
     }
 
-    @Auth
+    @Auth(permissions = {"btn.resident.edit"})
     @Log("更新居民信息")
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody Resident resident) {
@@ -81,7 +81,7 @@ public class ResidentController {
         return Result.success();
     }
 
-    @Auth
+    @Auth(permissions = {"btn.resident.delete"})
     @Log("删除居民")
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
@@ -95,7 +95,7 @@ public class ResidentController {
         return Result.success(relations);
     }
 
-    @Auth
+    @Auth(permissions = {"btn.resident.family.add"})
     @Log("添加家庭关系")
     @PostMapping("/family")
     public Result<?> addFamilyRelation(@RequestBody FamilyRelation relation) {
@@ -103,7 +103,7 @@ public class ResidentController {
         return Result.success();
     }
 
-    @Auth
+    @Auth(permissions = {"btn.resident.family.delete"})
     @Log("删除家庭关系")
     @DeleteMapping("/family/{id}")
     public Result<?> deleteFamilyRelation(@PathVariable Long id) {

@@ -1,5 +1,6 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Result;
 import com.community.entity.SecurityHazard;
@@ -28,6 +29,7 @@ public class SecurityHazardController {
     }
 
     @Log("上报安全隐患")
+    @Auth(value = "", permissions = {"btn.hazard.add"})
     @PostMapping
     public Result<?> add(@RequestBody SecurityHazard hazard, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -38,6 +40,7 @@ public class SecurityHazardController {
     }
 
     @Log("编辑隐患信息")
+    @Auth(value = "", permissions = {"btn.hazard.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody SecurityHazard hazard) {
         hazard.setId(id);
@@ -46,6 +49,7 @@ public class SecurityHazardController {
     }
 
     @Log("处理隐患")
+    @Auth(permissions = {"btn.hazard.handle"})
     @PutMapping("/{id}/handle")
     public Result<?> handle(@PathVariable Long id, @RequestBody SecurityHazard hazard, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -59,6 +63,7 @@ public class SecurityHazardController {
     }
 
     @Log("删除隐患")
+    @Auth(value = "", permissions = {"btn.hazard.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         hazardService.removeById(id);

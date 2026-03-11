@@ -1,10 +1,10 @@
-﻿<template>
+<template>
   <div>
     <el-card>
       <template #header>
         <div class="header-row">
           <span>网格化自动派单规则</span>
-          <el-button type="primary" @click="openAdd">新增规则</el-button>
+          <el-button v-if="userStore.hasPerm('btn.dispatch.rule.add')" type="primary" @click="openAdd">新增规则</el-button>
         </div>
       </template>
 
@@ -49,8 +49,8 @@
         <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="openEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="remove(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.dispatch.rule.edit')" type="primary" link @click="openEdit(row)">编辑</el-button>
+            <el-button v-if="userStore.hasPerm('btn.dispatch.rule.delete')" type="danger" link @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -109,7 +109,9 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { dispatchRuleApi, userApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const total = ref(0)
 const tableData = ref([])

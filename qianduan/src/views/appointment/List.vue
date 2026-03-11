@@ -17,7 +17,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">预约服务</el-button>
+          <el-button v-if="userStore.hasPerm('btn.appointment.add')" type="success" @click="handleAdd">预约服务</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -35,11 +35,11 @@
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
-            <el-button link type="success" @click="handleStatus(row, 1)" v-if="row.status === 0">确认</el-button>
-            <el-button link type="primary" @click="handleStatus(row, 2)" v-if="row.status === 1">完成</el-button>
-            <el-button link type="warning" @click="handleStatus(row, 3)" v-if="row.status < 2">取消</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="row.status === 0 && userStore.hasPerm('btn.appointment.status.confirm')" link type="success" @click="handleStatus(row, 1)">确认</el-button>
+            <el-button v-if="row.status === 1 && userStore.hasPerm('btn.appointment.status.complete')" link type="primary" @click="handleStatus(row, 2)">完成</el-button>
+            <el-button v-if="row.status < 2 && userStore.hasPerm('btn.appointment.status.cancel')" link type="warning" @click="handleStatus(row, 3)">取消</el-button>
+            <el-button v-if="userStore.hasPerm('btn.appointment.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="userStore.hasPerm('btn.appointment.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -80,9 +80,11 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { appointmentApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 import { phoneRule } from '../../utils/validation'
 
 const typeMap = { REPAIR: '维修', CLEAN: '保洁', MEDICAL: '医疗', OTHER: '其他' }
+const userStore = useUserStore()
 const statusMap = { 0: '待确认', 1: '已确认', 2: '已完成', 3: '已取消' }
 const statusType = { 0: 'warning', 1: 'primary', 2: 'success', 3: 'info' }
 const query = ref({ pageNum: 1, pageSize: 10, serviceType: '', status: null })
@@ -163,3 +165,4 @@ const handleReset = () => {
 
 onMounted(loadData)
 </script>
+

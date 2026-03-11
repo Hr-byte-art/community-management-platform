@@ -24,7 +24,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { authApi } from '../api'
+import { authApi, userApi } from '../api'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
@@ -42,7 +42,17 @@ const handleLogin = async () => {
   loading.value = true
   try {
     const res = await authApi.login(form.value)
-    userStore.setUser(res.data.user, res.data.token)
+    const loginPermissions = Array.isArray(res.data.permissions) ? res.data.permissions : null
+    userStore.setUser(res.data.user, res.data.token, loginPermissions)
+
+    try {
+      const infoRes = await userApi.getInfo()
+      const infoPermissions = Array.isArray(infoRes.data.permissions) ? infoRes.data.permissions : loginPermissions
+      userStore.setUser(infoRes.data.user || res.data.user, res.data.token, infoPermissions)
+    } catch (error) {
+      userStore.setUser(res.data.user, res.data.token, loginPermissions)
+    }
+
     ElMessage.success('登录成功')
     router.push('/')
   } finally {

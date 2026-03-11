@@ -29,7 +29,7 @@ public class GridDispatchRuleController {
         return Result.success(gridDispatchRuleService.pageQuery(pageNum, pageSize, gridName, orderType, enabled));
     }
 
-    @Auth
+    @Auth(permissions = {"btn.dispatch.rule.add"})
     @PostMapping
     public Result<?> add(@RequestBody GridDispatchRule rule) {
         String error = validateRule(rule);
@@ -42,7 +42,7 @@ public class GridDispatchRuleController {
         return gridDispatchRuleService.save(rule) ? Result.success() : Result.error("新增规则失败");
     }
 
-    @Auth
+    @Auth(permissions = {"btn.dispatch.rule.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody GridDispatchRule rule) {
         GridDispatchRule existing = gridDispatchRuleService.getById(id);
@@ -58,13 +58,13 @@ public class GridDispatchRuleController {
         return gridDispatchRuleService.updateById(rule) ? Result.success() : Result.error("更新规则失败");
     }
 
-    @Auth
+    @Auth(permissions = {"btn.dispatch.rule.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         return gridDispatchRuleService.removeById(id) ? Result.success() : Result.error("删除规则失败");
     }
 
-    @Auth
+    @Auth(permissions = {"btn.dispatch.rule.preview"})
     @GetMapping("/preview")
     public Result<?> preview(@RequestParam(required = false) String orderType,
                              @RequestParam(required = false) Integer priority) {

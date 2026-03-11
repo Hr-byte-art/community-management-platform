@@ -1,5 +1,6 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Result;
 import com.community.entity.NeighborHelp;
@@ -37,6 +38,7 @@ public class NeighborHelpController {
     }
 
     @Log("发布互助信息")
+    @Auth(value = "", permissions = {"btn.neighborhelp.add"})
     @PostMapping
     public Result<?> add(@RequestBody NeighborHelp help, HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
@@ -48,6 +50,7 @@ public class NeighborHelpController {
     }
 
     @Log("编辑互助信息")
+    @Auth(value = "", permissions = {"btn.neighborhelp.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody NeighborHelp help) {
         help.setId(id);
@@ -56,6 +59,7 @@ public class NeighborHelpController {
     }
 
     @Log("更新互助状态")
+    @Auth(value = "", permissions = {"btn.neighborhelp.status.complete", "btn.neighborhelp.status.close"}, requireAllPermissions = false)
     @PutMapping("/{id}/status")
     public Result<?> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
         NeighborHelp help = neighborHelpService.getById(id);
@@ -65,6 +69,7 @@ public class NeighborHelpController {
     }
 
     @Log("删除互助信息")
+    @Auth(value = "", permissions = {"btn.neighborhelp.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         neighborHelpService.removeById(id);

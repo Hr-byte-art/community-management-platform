@@ -17,7 +17,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">发布互助</el-button>
+          <el-button v-if="userStore.hasPerm('btn.neighborhelp.add')" type="success" @click="handleAdd">发布互助</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -40,10 +40,10 @@
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="success" @click="handleComplete(row)" v-if="row.status === 1">完成</el-button>
-            <el-button link type="warning" @click="handleClose(row)" v-if="row.status === 1">关闭</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.neighborhelp.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="row.status === 1 && userStore.hasPerm('btn.neighborhelp.status.complete')" link type="success" @click="handleComplete(row)">完成</el-button>
+            <el-button v-if="row.status === 1 && userStore.hasPerm('btn.neighborhelp.status.close')" link type="warning" @click="handleClose(row)">关闭</el-button>
+            <el-button v-if="userStore.hasPerm('btn.neighborhelp.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -89,6 +89,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { neighborHelpApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 import { contactRule } from '../../utils/validation'
 
 const typeMap = { SEEK: '求助', OFFER: '提供帮助' }
@@ -206,3 +207,4 @@ const handleReset = () => {
 
 onMounted(loadData)
 </script>
+

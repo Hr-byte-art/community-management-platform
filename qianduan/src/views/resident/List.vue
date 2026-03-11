@@ -12,8 +12,8 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">新增居民</el-button>
-          <el-button type="warning" @click="handleExport">导出Excel</el-button>
+          <el-button v-if="userStore.hasPerm('btn.resident.add')" type="success" @click="handleAdd">新增居民</el-button>
+          <el-button v-if="userStore.hasPerm('btn.resident.export')" type="warning" @click="handleExport">导出Excel</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -33,8 +33,8 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.resident.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="userStore.hasPerm('btn.resident.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

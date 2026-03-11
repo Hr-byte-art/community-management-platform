@@ -18,7 +18,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">上报隐患</el-button>
+          <el-button v-if="userStore.hasPerm('btn.hazard.add')" type="success" @click="handleAdd">上报隐患</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -35,10 +35,10 @@
         <el-table-column prop="createTime" label="上报时间" width="160" />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleHandle(row)" v-if="row.status < 2">处理</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="row.status < 2 && userStore.hasPerm('btn.hazard.handle')" link type="primary" @click="handleHandle(row)">处理</el-button>
+            <el-button v-if="userStore.hasPerm('btn.hazard.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="userStore.hasPerm('btn.hazard.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -76,7 +76,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { hazardApi } from '../../api'
+import { useUserStore } from '../../stores/user'
 
+const userStore = useUserStore()
 const typeMap = { FIRE: '消防', THEFT: '盗窃', TRAFFIC: '交通', OTHER: '其他' }
 const statusMap = { 0: '待处理', 1: '处理中', 2: '已解决', 3: '已关闭' }
 const statusType = { 0: 'danger', 1: 'warning', 2: 'success', 3: 'info' }
@@ -153,3 +155,4 @@ const handleReset = () => {
 
 onMounted(loadData)
 </script>
+
