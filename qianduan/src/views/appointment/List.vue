@@ -61,6 +61,9 @@
         </el-row>
         <el-form-item label="服务地址" prop="address"><el-input v-model="form.address" /></el-form-item>
         <el-form-item label="预约内容" prop="content"><el-input v-model="form.content" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="AI辅助">
+          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+        </el-form-item>
         <el-form-item label="状态" v-if="form.id">
           <el-select v-model="form.status">
             <el-option label="待确认" :value="0" /><el-option label="已确认" :value="1" /><el-option label="已完成" :value="2" /><el-option label="已取消" :value="3" />
@@ -94,6 +97,7 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const form = ref({})
 const formRef = ref()
+const aiLoading = ref(false)
 
 const rules = {
   title: [{ required: true, message: '请输入预约标题', trigger: 'blur' }],
@@ -128,6 +132,28 @@ const handleEdit = async (row) => {
   nextTick(() => {
     formRef.value?.clearValidate()
   })
+}
+
+const handleEnhance = async () => {
+  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+    ElMessage.warning('请先输入预约标题或预约内容')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const res = await appointmentApi.enhance({
+      title: form.value.title,
+      content: form.value.content,
+      serviceType: form.value.serviceType,
+      address: form.value.address,
+      appointmentTime: form.value.appointmentTime,
+      remark: form.value.remark
+    })
+    form.value = { ...form.value, ...res.data }
+    ElMessage.success('AI 已帮你完善预约信息')
+  } finally {
+    aiLoading.value = false
+  }
 }
 
 const handleSubmit = async () => {

@@ -1,7 +1,10 @@
 package com.community.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.community.annotation.Auth;
 import com.community.annotation.Log;
+import com.community.ai.dto.ServiceAppointmentEnhanceRequest;
+import com.community.ai.service.AIService;
 import com.community.common.Result;
 import com.community.entity.ServiceAppointment;
 import com.community.service.ServiceAppointmentService;
@@ -17,6 +20,8 @@ public class ServiceAppointmentController {
     private ServiceAppointmentService appointmentService;
     @Autowired
     private SysPermissionService sysPermissionService;
+    @Autowired
+    private AIService aiService;
 
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
@@ -50,6 +55,19 @@ public class ServiceAppointmentController {
             return Result.error("无权限查看该预约");
         }
         return Result.success(appointment);
+    }
+
+    @Auth(value = "", permissions = {"btn.appointment.add", "btn.appointment.edit"}, requireAllPermissions = false)
+    @PostMapping("/ai/complete")
+    public Result<?> enhance(@RequestBody ServiceAppointmentEnhanceRequest request) {
+        if (request == null || StrUtil.isAllBlank(request.getTitle(), request.getContent())) {
+            return Result.error(400, "请先输入预约标题或预约内容");
+        }
+        try {
+            return Result.success(aiService.enhanceServiceAppointment(request));
+        } catch (Exception e) {
+            return Result.error("AI 完善预约信息失败，请稍后重试");
+        }
     }
 
     @Log("预约生活服务")

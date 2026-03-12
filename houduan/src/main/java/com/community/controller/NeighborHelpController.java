@@ -1,7 +1,10 @@
 package com.community.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.community.annotation.Auth;
 import com.community.annotation.Log;
+import com.community.ai.dto.NeighborHelpEnhanceRequest;
+import com.community.ai.service.AIService;
 import com.community.common.Result;
 import com.community.entity.NeighborHelp;
 import com.community.service.NeighborHelpService;
@@ -14,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 public class NeighborHelpController {
     @Autowired
     private NeighborHelpService neighborHelpService;
+    @Autowired
+    private AIService aiService;
 
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
@@ -35,6 +40,19 @@ public class NeighborHelpController {
         // 预览不增加浏览次数
         NeighborHelp help = neighborHelpService.getById(id);
         return Result.success(help);
+    }
+
+    @Auth(value = "", permissions = {"btn.neighborhelp.add", "btn.neighborhelp.edit"}, requireAllPermissions = false)
+    @PostMapping("/ai/complete")
+    public Result<?> enhance(@RequestBody NeighborHelpEnhanceRequest request) {
+        if (request == null || StrUtil.isAllBlank(request.getTitle(), request.getContent())) {
+            return Result.error(400, "请先输入互助标题或互助内容");
+        }
+        try {
+            return Result.success(aiService.enhanceNeighborHelp(request));
+        } catch (Exception e) {
+            return Result.error("AI 完善互助信息失败，请稍后重试");
+        }
     }
 
     @Log("发布互助信息")

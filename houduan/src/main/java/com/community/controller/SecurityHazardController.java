@@ -1,7 +1,10 @@
 package com.community.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.community.annotation.Auth;
 import com.community.annotation.Log;
+import com.community.ai.dto.SecurityHazardEnhanceRequest;
+import com.community.ai.service.AIService;
 import com.community.common.Result;
 import com.community.entity.SecurityHazard;
 import com.community.service.SecurityHazardService;
@@ -15,6 +18,8 @@ import java.time.LocalDateTime;
 public class SecurityHazardController {
     @Autowired
     private SecurityHazardService hazardService;
+    @Autowired
+    private AIService aiService;
 
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
@@ -26,6 +31,19 @@ public class SecurityHazardController {
     @GetMapping("/{id}")
     public Result<?> getById(@PathVariable Long id) {
         return Result.success(hazardService.getById(id));
+    }
+
+    @Auth(value = "", permissions = {"btn.hazard.add", "btn.hazard.edit"}, requireAllPermissions = false)
+    @PostMapping("/ai/complete")
+    public Result<?> enhance(@RequestBody SecurityHazardEnhanceRequest request) {
+        if (request == null || StrUtil.isAllBlank(request.getTitle(), request.getContent())) {
+            return Result.error(400, "请先输入隐患标题或隐患描述");
+        }
+        try {
+            return Result.success(aiService.enhanceSecurityHazard(request));
+        } catch (Exception e) {
+            return Result.error("AI 完善隐患信息失败，请稍后重试");
+        }
     }
 
     @Log("上报安全隐患")

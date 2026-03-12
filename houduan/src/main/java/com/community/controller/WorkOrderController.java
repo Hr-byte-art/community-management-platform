@@ -1,7 +1,10 @@
 package com.community.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.community.annotation.Auth;
 import com.community.annotation.Log;
+import com.community.ai.dto.WorkOrderEnhanceRequest;
+import com.community.ai.service.AIService;
 import com.community.common.Constants;
 import com.community.common.Result;
 import com.community.entity.WorkOrder;
@@ -32,6 +35,8 @@ public class WorkOrderController {
     private ServiceEvaluationService serviceEvaluationService;
     @Autowired
     private SysPermissionService sysPermissionService;
+    @Autowired
+    private AIService aiService;
 
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
@@ -73,6 +78,19 @@ public class WorkOrderController {
         }
 
         return Result.success(workOrder);
+    }
+
+    @Auth(value = "", permissions = {"btn.workorder.add", "btn.workorder.edit"}, requireAllPermissions = false)
+    @PostMapping("/ai/complete")
+    public Result<?> enhance(@RequestBody WorkOrderEnhanceRequest request) {
+        if (request == null || StrUtil.isAllBlank(request.getTitle(), request.getContent())) {
+            return Result.error(400, "请先输入工单标题或问题描述");
+        }
+        try {
+            return Result.success(aiService.enhanceWorkOrder(request));
+        } catch (Exception e) {
+            return Result.error("AI 完善工单信息失败，请稍后重试");
+        }
     }
 
     @Log("Submit Work Order")

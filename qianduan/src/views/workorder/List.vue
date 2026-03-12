@@ -64,6 +64,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="内容"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
+        <el-form-item label="AI辅助" v-if="!isView && !isHandle">
+          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+        </el-form-item>
         <template v-if="isHandle || isView || isEdit">
           <el-form-item label="处理状态">
             <el-select v-model="form.status" :disabled="isView">
@@ -100,6 +103,7 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogMode = ref('add')
 const form = ref({})
+const aiLoading = ref(false)
 
 const dialogTitle = computed(() => ({ add: '提交工单', edit: '编辑工单', handle: '处理工单', view: '工单详情' }[dialogMode.value]))
 const isView = computed(() => dialogMode.value === 'view')
@@ -136,6 +140,26 @@ const handleView = (row) => {
   form.value = { ...row }
   dialogMode.value = 'view'
   dialogVisible.value = true
+}
+
+const handleEnhance = async () => {
+  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+    ElMessage.warning('请先输入标题或问题描述')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const res = await workOrderApi.enhance({
+      title: form.value.title,
+      content: form.value.content,
+      orderType: form.value.orderType,
+      priority: form.value.priority
+    })
+    form.value = { ...form.value, ...res.data }
+    ElMessage.success('AI 已帮你完善工单信息')
+  } finally {
+    aiLoading.value = false
+  }
 }
 
 const handleSubmit = async () => {

@@ -55,6 +55,9 @@
         </el-form-item>
         <el-form-item label="隐患位置"><el-input v-model="form.location" :disabled="isView" /></el-form-item>
         <el-form-item label="隐患描述"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
+        <el-form-item label="AI辅助" v-if="!isView && !isHandle">
+          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+        </el-form-item>
         <template v-if="isHandle || isView || isEdit">
           <el-form-item label="处理状态">
             <el-select v-model="form.status" :disabled="isView">
@@ -89,6 +92,7 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogMode = ref('add')
 const form = ref({})
+const aiLoading = ref(false)
 
 const dialogTitle = computed(() => ({ add: '上报隐患', edit: '编辑隐患', handle: '处理隐患', view: '隐患详情' }[dialogMode.value]))
 const isView = computed(() => dialogMode.value === 'view')
@@ -125,6 +129,26 @@ const handleView = (row) => {
   form.value = { ...row }
   dialogMode.value = 'view'
   dialogVisible.value = true
+}
+
+const handleEnhance = async () => {
+  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+    ElMessage.warning('请先输入标题或隐患描述')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const res = await hazardApi.enhance({
+      title: form.value.title,
+      content: form.value.content,
+      hazardType: form.value.hazardType,
+      location: form.value.location
+    })
+    form.value = { ...form.value, ...res.data }
+    ElMessage.success('AI 已帮你完善隐患信息')
+  } finally {
+    aiLoading.value = false
+  }
 }
 
 const handleSubmit = async () => {

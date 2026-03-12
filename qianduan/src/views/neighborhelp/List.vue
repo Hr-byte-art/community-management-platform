@@ -71,6 +71,9 @@
         </el-row>
         <el-form-item label="联系方式" prop="contactInfo"><el-input v-model="form.contactInfo" :disabled="isView" /></el-form-item>
         <el-form-item label="内容" prop="content"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
+        <el-form-item label="AI辅助" v-if="!isView">
+          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+        </el-form-item>
         <el-form-item label="状态" v-if="form.id">
           <el-select v-model="form.status" :disabled="isView">
             <el-option label="已关闭" :value="0" /><el-option label="进行中" :value="1" /><el-option label="已完成" :value="2" />
@@ -104,6 +107,7 @@ const dialogVisible = ref(false)
 const dialogMode = ref('add')
 const form = ref({})
 const formRef = ref()
+const aiLoading = ref(false)
 
 const isView = computed(() => dialogMode.value === 'view')
 const dialogTitle = computed(() => ({ add: '发布互助', edit: '编辑互助', view: '互助详情' }[dialogMode.value]))
@@ -158,6 +162,26 @@ const handleView = async (row) => {
 const handleDetailView = async (id) => {
   const res = await neighborHelpApi.get(id)
   return res.data
+}
+
+const handleEnhance = async () => {
+  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+    ElMessage.warning('请先输入互助标题或互助内容')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const res = await neighborHelpApi.enhance({
+      title: form.value.title,
+      content: form.value.content,
+      helpType: form.value.helpType,
+      category: form.value.category
+    })
+    form.value = { ...form.value, ...res.data }
+    ElMessage.success('AI 已帮你完善互助信息')
+  } finally {
+    aiLoading.value = false
+  }
 }
 
 const handleSubmit = async () => {
