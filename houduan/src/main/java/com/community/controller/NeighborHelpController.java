@@ -50,6 +50,8 @@ public class NeighborHelpController {
         }
         try {
             return Result.success(aiService.enhanceNeighborHelp(request));
+        } catch (IllegalStateException e) {
+            return Result.error(e.getMessage());
         } catch (Exception e) {
             return Result.error("AI 完善互助信息失败，请稍后重试");
         }

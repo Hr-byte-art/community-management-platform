@@ -2,7 +2,7 @@
   <el-container class="layout-container">
     <el-aside width="220px" class="aside">
       <div class="logo">社区治理系统</div>
-      <el-menu :default-active="route.path" router background-color="#304156" text-color="#bfcbd9" active-text-color="#409eff">
+      <el-menu :default-active="route.path" background-color="#304156" text-color="#bfcbd9" active-text-color="#409eff" @select="handleMenuSelect">
         <el-menu-item index="/home" v-if="hasMenu('menu.home')">
           <el-icon><HomeFilled /></el-icon>
           <span>首页</span>
@@ -92,7 +92,7 @@
       </el-header>
 
       <el-main class="main">
-        <router-view />
+        <router-view :key="route.fullPath" />
       </el-main>
     </el-container>
   </el-container>
@@ -109,6 +109,13 @@ const userStore = useUserStore()
 
 const hasMenu = (permissionCode) => userStore.hasPerm(permissionCode)
 const hasAnyMenu = (permissionCodes) => userStore.hasAnyPerm(permissionCodes)
+
+const handleMenuSelect = (index) => {
+  if (!index || index === route.path) {
+    return
+  }
+  router.push(index)
+}
 
 const handleCommand = (command) => {
   if (command === 'logout') {

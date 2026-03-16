@@ -46,6 +46,11 @@
       <el-pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadData" style="margin-top: 20px" />
     </el-card>
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑预约' : '预约服务'" width="600px">
+      <div
+        v-loading="aiLoading"
+        element-loading-text="AI 正在完善，请稍候..."
+        element-loading-background="rgba(255, 255, 255, 0.72)"
+      >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="预约标题" prop="title"><el-input v-model="form.title" /></el-form-item>
         <el-form-item label="服务类型" prop="serviceType">
@@ -62,7 +67,10 @@
         <el-form-item label="服务地址" prop="address"><el-input v-model="form.address" /></el-form-item>
         <el-form-item label="预约内容" prop="content"><el-input v-model="form.content" type="textarea" :rows="3" /></el-form-item>
         <el-form-item label="AI辅助">
-          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+          <div style="width: 100%">
+            <el-button type="primary" plain :loading="aiLoading" @click.stop="handleEnhance">{{ aiLoading ? '正在完善...' : '使用大模型完善信息' }}</el-button>
+            <div style="margin-top: 8px; font-size: 12px; color: #909399">AI 会帮你整理服务诉求，不会自动填写联系人、电话、详细地址和预约时间。</div>
+          </div>
         </el-form-item>
         <el-form-item label="状态" v-if="form.id">
           <el-select v-model="form.status">
@@ -71,6 +79,7 @@
         </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" /></el-form-item>
       </el-form>
+      </div>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit">确定</el-button>
@@ -119,6 +128,7 @@ const loadData = async () => {
 
 const handleAdd = () => {
   form.value = { serviceType: 'REPAIR' }
+  aiLoading.value = false
   dialogVisible.value = true
   nextTick(() => {
     formRef.value?.clearValidate()
@@ -128,14 +138,17 @@ const handleAdd = () => {
 const handleEdit = async (row) => {
   const res = await appointmentApi.get(row.id)
   form.value = res.data
+  aiLoading.value = false
   dialogVisible.value = true
   nextTick(() => {
     formRef.value?.clearValidate()
   })
 }
 
+const hasEnhanceInput = () => Boolean(form.value.title?.trim() || form.value.content?.trim())
+
 const handleEnhance = async () => {
-  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+  if (!hasEnhanceInput()) {
     ElMessage.warning('请先输入预约标题或预约内容')
     return
   }
@@ -150,7 +163,12 @@ const handleEnhance = async () => {
       remark: form.value.remark
     })
     form.value = { ...form.value, ...res.data }
-    ElMessage.success('AI 已帮你完善预约信息')
+    nextTick(() => {
+      formRef.value?.clearValidate(['title', 'content', 'serviceType'])
+    })
+    ElMessage.success('AI 已完善预约描述，请继续补充真实联系信息后提交')
+  } catch (error) {
+    // 请求层已统一提示，这里只负责兜底，避免未捕获 Promise 影响页面切换
   } finally {
     aiLoading.value = false
   }

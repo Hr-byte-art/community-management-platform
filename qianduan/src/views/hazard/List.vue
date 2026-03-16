@@ -45,6 +45,11 @@
       <el-pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadData" style="margin-top: 20px" />
     </el-card>
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+      <div
+        v-loading="aiLoading"
+        element-loading-text="AI 正在完善，请稍候..."
+        element-loading-background="rgba(255, 255, 255, 0.72)"
+      >
       <el-form :model="form" label-width="100px">
         <el-form-item label="标题"><el-input v-model="form.title" :disabled="isView" /></el-form-item>
         <el-form-item label="隐患类型">
@@ -56,7 +61,10 @@
         <el-form-item label="隐患位置"><el-input v-model="form.location" :disabled="isView" /></el-form-item>
         <el-form-item label="隐患描述"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
         <el-form-item label="AI辅助" v-if="!isView && !isHandle">
-          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+          <div style="width: 100%">
+            <el-button type="primary" plain :loading="aiLoading" @click.stop="handleEnhance">{{ aiLoading ? '正在完善...' : '使用大模型完善信息' }}</el-button>
+            <div style="margin-top: 8px; font-size: 12px; color: #909399">AI 会帮你整理风险描述，不会自动捏造具体位置、照片和现场细节。</div>
+          </div>
         </el-form-item>
         <template v-if="isHandle || isView || isEdit">
           <el-form-item label="处理状态">
@@ -67,6 +75,7 @@
           <el-form-item label="处理结果"><el-input v-model="form.handleResult" type="textarea" :rows="3" :disabled="isView" /></el-form-item>
         </template>
       </el-form>
+      </div>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ isView ? '关闭' : '取消' }}</el-button>
         <el-button type="primary" @click="handleSubmit" v-if="!isView">确定</el-button>
@@ -109,30 +118,36 @@ const loadData = async () => {
 
 const handleAdd = () => {
   form.value = { hazardType: 'FIRE' }
+  aiLoading.value = false
   dialogMode.value = 'add'
   dialogVisible.value = true
 }
 
 const handleHandle = (row) => {
   form.value = { ...row, status: 1 }
+  aiLoading.value = false
   dialogMode.value = 'handle'
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
   form.value = { ...row }
+  aiLoading.value = false
   dialogMode.value = 'edit'
   dialogVisible.value = true
 }
 
 const handleView = (row) => {
   form.value = { ...row }
+  aiLoading.value = false
   dialogMode.value = 'view'
   dialogVisible.value = true
 }
 
+const hasEnhanceInput = () => Boolean(form.value.title?.trim() || form.value.content?.trim())
+
 const handleEnhance = async () => {
-  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+  if (!hasEnhanceInput()) {
     ElMessage.warning('请先输入标题或隐患描述')
     return
   }
@@ -145,7 +160,9 @@ const handleEnhance = async () => {
       location: form.value.location
     })
     form.value = { ...form.value, ...res.data }
-    ElMessage.success('AI 已帮你完善隐患信息')
+    ElMessage.success('AI 已完善主体描述，请继续核对位置和现场信息')
+  } catch (error) {
+    // 请求层已统一提示，这里只负责兜底，避免未捕获 Promise 影响页面切换
   } finally {
     aiLoading.value = false
   }

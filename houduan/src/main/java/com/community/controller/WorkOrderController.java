@@ -88,6 +88,8 @@ public class WorkOrderController {
         }
         try {
             return Result.success(aiService.enhanceWorkOrder(request));
+        } catch (IllegalStateException e) {
+            return Result.error(e.getMessage());
         } catch (Exception e) {
             return Result.error("AI 完善工单信息失败，请稍后重试");
         }

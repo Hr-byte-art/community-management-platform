@@ -41,6 +41,8 @@ public class SecurityHazardController {
         }
         try {
             return Result.success(aiService.enhanceSecurityHazard(request));
+        } catch (IllegalStateException e) {
+            return Result.error(e.getMessage());
         } catch (Exception e) {
             return Result.error("AI 完善隐患信息失败，请稍后重试");
         }

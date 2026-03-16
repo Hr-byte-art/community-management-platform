@@ -65,6 +65,8 @@ public class ServiceAppointmentController {
         }
         try {
             return Result.success(aiService.enhanceServiceAppointment(request));
+        } catch (IllegalStateException e) {
+            return Result.error(e.getMessage());
         } catch (Exception e) {
             return Result.error("AI 完善预约信息失败，请稍后重试");
         }

@@ -50,6 +50,11 @@
       <el-pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadData" style="margin-top: 20px" />
     </el-card>
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+      <div
+        v-loading="aiLoading"
+        element-loading-text="AI 正在完善，请稍候..."
+        element-loading-background="rgba(255, 255, 255, 0.72)"
+      >
       <el-form :model="form" label-width="100px">
         <el-form-item label="标题"><el-input v-model="form.title" :disabled="isView" /></el-form-item>
         <el-form-item label="类型">
@@ -65,7 +70,10 @@
         </el-form-item>
         <el-form-item label="内容"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
         <el-form-item label="AI辅助" v-if="!isView && !isHandle">
-          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+          <div style="width: 100%">
+            <el-button type="primary" plain :loading="aiLoading" @click.stop="handleEnhance">{{ aiLoading ? '正在完善...' : '使用大模型完善信息' }}</el-button>
+            <div style="margin-top: 8px; font-size: 12px; color: #909399">AI 会帮你梳理问题现象和优先级，不会自动填写门牌号、联系方式等隐私信息。</div>
+          </div>
         </el-form-item>
         <template v-if="isHandle || isView || isEdit">
           <el-form-item label="处理状态">
@@ -76,6 +84,7 @@
           <el-form-item label="处理结果"><el-input v-model="form.handleResult" type="textarea" :rows="3" :disabled="isView" /></el-form-item>
         </template>
       </el-form>
+      </div>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ isView ? '关闭' : '取消' }}</el-button>
         <el-button type="primary" @click="handleSubmit" v-if="!isView">确定</el-button>
@@ -120,30 +129,36 @@ const loadData = async () => {
 
 const handleAdd = () => {
   form.value = { priority: 1, orderType: 'REPAIR' }
+  aiLoading.value = false
   dialogMode.value = 'add'
   dialogVisible.value = true
 }
 
 const handleHandle = (row) => {
   form.value = { ...row, status: 1 }
+  aiLoading.value = false
   dialogMode.value = 'handle'
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
   form.value = { ...row }
+  aiLoading.value = false
   dialogMode.value = 'edit'
   dialogVisible.value = true
 }
 
 const handleView = (row) => {
   form.value = { ...row }
+  aiLoading.value = false
   dialogMode.value = 'view'
   dialogVisible.value = true
 }
 
+const hasEnhanceInput = () => Boolean(form.value.title?.trim() || form.value.content?.trim())
+
 const handleEnhance = async () => {
-  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+  if (!hasEnhanceInput()) {
     ElMessage.warning('请先输入标题或问题描述')
     return
   }
@@ -156,7 +171,9 @@ const handleEnhance = async () => {
       priority: form.value.priority
     })
     form.value = { ...form.value, ...res.data }
-    ElMessage.success('AI 已帮你完善工单信息')
+    ElMessage.success('AI 已完善主体描述，请核对隐私信息后再提交')
+  } catch (error) {
+    // 请求层已统一提示，这里只负责兜底，避免未捕获 Promise 影响页面切换
   } finally {
     aiLoading.value = false
   }

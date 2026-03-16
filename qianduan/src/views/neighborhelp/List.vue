@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <el-card>
       <el-form :inline="true" :model="query">
@@ -50,6 +50,11 @@
       <el-pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total" layout="total, prev, pager, next" @current-change="loadData" style="margin-top: 20px" />
     </el-card>
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+      <div
+        v-loading="aiLoading"
+        element-loading-text="AI 正在完善，请稍候..."
+        element-loading-background="rgba(255, 255, 255, 0.72)"
+      >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="标题" prop="title"><el-input v-model="form.title" :disabled="isView" /></el-form-item>
         <el-row :gutter="20">
@@ -72,7 +77,10 @@
         <el-form-item label="联系方式" prop="contactInfo"><el-input v-model="form.contactInfo" :disabled="isView" /></el-form-item>
         <el-form-item label="内容" prop="content"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
         <el-form-item label="AI辅助" v-if="!isView">
-          <el-button type="primary" plain :loading="aiLoading" @click="handleEnhance">使用大模型完善信息</el-button>
+          <div style="width: 100%">
+            <el-button type="primary" plain :loading="aiLoading" @click.stop="handleEnhance">{{ aiLoading ? '正在完善...' : '使用大模型完善信息' }}</el-button>
+            <div style="margin-top: 8px; font-size: 12px; color: #909399">AI 会帮你润色互助内容，但不会自动填写手机号、微信号等联系方式。</div>
+          </div>
         </el-form-item>
         <el-form-item label="状态" v-if="form.id">
           <el-select v-model="form.status" :disabled="isView">
@@ -80,6 +88,7 @@
           </el-select>
         </el-form-item>
       </el-form>
+      </div>
       <template #footer>
         <el-button @click="dialogVisible = false">{{ isView ? '关闭' : '取消' }}</el-button>
         <el-button type="primary" @click="handleSubmit" v-if="!isView">确定</el-button>
@@ -95,6 +104,7 @@ import { neighborHelpApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import { contactRule } from '../../utils/validation'
 
+const userStore = useUserStore()
 const typeMap = { SEEK: '求助', OFFER: '提供帮助' }
 const categoryMap = { DAILY: '日常', SKILL: '技能', ITEM: '物品', OTHER: '其他' }
 const statusMap = { 0: '已关闭', 1: '进行中', 2: '已完成' }
@@ -130,6 +140,7 @@ const loadData = async () => {
 
 const handleAdd = () => {
   form.value = { helpType: 'SEEK', category: 'DAILY' }
+  aiLoading.value = false
   dialogMode.value = 'add'
   dialogVisible.value = true
   nextTick(() => {
@@ -140,6 +151,7 @@ const handleAdd = () => {
 const handleEdit = async (row) => {
   const res = await neighborHelpApi.get(row.id)
   form.value = res.data
+  aiLoading.value = false
   dialogMode.value = 'edit'
   dialogVisible.value = true
   nextTick(() => {
@@ -151,6 +163,7 @@ const handleView = async (row) => {
   // 使用preview接口，不增加浏览次数
   const res = await neighborHelpApi.preview(row.id)
   form.value = res.data
+  aiLoading.value = false
   dialogMode.value = 'view'
   dialogVisible.value = true
   nextTick(() => {
@@ -164,8 +177,10 @@ const handleDetailView = async (id) => {
   return res.data
 }
 
+const hasEnhanceInput = () => Boolean(form.value.title?.trim() || form.value.content?.trim())
+
 const handleEnhance = async () => {
-  if (!form.value.title?.trim() && !form.value.content?.trim()) {
+  if (!hasEnhanceInput()) {
     ElMessage.warning('请先输入互助标题或互助内容')
     return
   }
@@ -178,7 +193,12 @@ const handleEnhance = async () => {
       category: form.value.category
     })
     form.value = { ...form.value, ...res.data }
-    ElMessage.success('AI 已帮你完善互助信息')
+    nextTick(() => {
+      formRef.value?.clearValidate(['title', 'content', 'helpType', 'category'])
+    })
+    ElMessage.success('AI 已完善互助内容，请补充真实联系方式后发布')
+  } catch (error) {
+    // 请求层已统一提示，这里只负责兜底，避免未捕获 Promise 影响页面切换
   } finally {
     aiLoading.value = false
   }
@@ -231,4 +251,5 @@ const handleReset = () => {
 
 onMounted(loadData)
 </script>
+
 

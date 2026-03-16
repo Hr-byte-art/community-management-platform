@@ -78,34 +78,38 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public WorkOrderEnhanceResponse enhanceWorkOrder(WorkOrderEnhanceRequest request) {
-        String userPrompt = buildWorkOrderUserPrompt(request);
+        WorkOrderEnhanceRequest safeRequest = normalizeWorkOrderRequest(request);
+        String userPrompt = buildWorkOrderUserPrompt(safeRequest);
         String content = callModel(structuredWorkOrderPrompt, userPrompt);
         WorkOrderEnhanceResponse response = parseModelResponse(content, WorkOrderEnhanceResponse.class);
-        return sanitizeWorkOrderResponse(response, request);
+        return sanitizeWorkOrderResponse(response, safeRequest);
     }
 
     @Override
     public SecurityHazardEnhanceResponse enhanceSecurityHazard(SecurityHazardEnhanceRequest request) {
-        String userPrompt = buildSecurityHazardUserPrompt(request);
+        SecurityHazardEnhanceRequest safeRequest = normalizeSecurityHazardRequest(request);
+        String userPrompt = buildSecurityHazardUserPrompt(safeRequest);
         String content = callModel(structuredHazardPrompt, userPrompt);
         SecurityHazardEnhanceResponse response = parseModelResponse(content, SecurityHazardEnhanceResponse.class);
-        return sanitizeSecurityHazardResponse(response, request);
+        return sanitizeSecurityHazardResponse(response, safeRequest);
     }
 
     @Override
     public NeighborHelpEnhanceResponse enhanceNeighborHelp(NeighborHelpEnhanceRequest request) {
-        String userPrompt = buildNeighborHelpUserPrompt(request);
+        NeighborHelpEnhanceRequest safeRequest = normalizeNeighborHelpRequest(request);
+        String userPrompt = buildNeighborHelpUserPrompt(safeRequest);
         String content = callModel(structuredNeighborHelpPrompt, userPrompt);
         NeighborHelpEnhanceResponse response = parseModelResponse(content, NeighborHelpEnhanceResponse.class);
-        return sanitizeNeighborHelpResponse(response, request);
+        return sanitizeNeighborHelpResponse(response, safeRequest);
     }
 
     @Override
     public ServiceAppointmentEnhanceResponse enhanceServiceAppointment(ServiceAppointmentEnhanceRequest request) {
-        String userPrompt = buildAppointmentUserPrompt(request);
+        ServiceAppointmentEnhanceRequest safeRequest = normalizeServiceAppointmentRequest(request);
+        String userPrompt = buildAppointmentUserPrompt(safeRequest);
         String content = callModel(structuredAppointmentPrompt, userPrompt);
         ServiceAppointmentEnhanceResponse response = parseModelResponse(content, ServiceAppointmentEnhanceResponse.class);
-        return sanitizeServiceAppointmentResponse(response, request);
+        return sanitizeServiceAppointmentResponse(response, safeRequest);
     }
 
     private String callModel(String systemPrompt, String userPrompt) {
@@ -161,8 +165,51 @@ public class AIServiceImpl implements AIService {
                 + "备注：" + safeValue(request.getRemark());
     }
 
+    private WorkOrderEnhanceRequest normalizeWorkOrderRequest(WorkOrderEnhanceRequest request) {
+        WorkOrderEnhanceRequest safeRequest = request == null ? new WorkOrderEnhanceRequest() : request;
+        WorkOrderEnhanceRequest normalizedRequest = new WorkOrderEnhanceRequest();
+        normalizedRequest.setTitle(normalizeText(safeRequest.getTitle()));
+        normalizedRequest.setContent(normalizeText(safeRequest.getContent()));
+        normalizedRequest.setOrderType(normalizeEnumValue(safeRequest.getOrderType()));
+        normalizedRequest.setPriority(safeRequest.getPriority());
+        return normalizedRequest;
+    }
+
+    private SecurityHazardEnhanceRequest normalizeSecurityHazardRequest(SecurityHazardEnhanceRequest request) {
+        SecurityHazardEnhanceRequest safeRequest = request == null ? new SecurityHazardEnhanceRequest() : request;
+        SecurityHazardEnhanceRequest normalizedRequest = new SecurityHazardEnhanceRequest();
+        normalizedRequest.setTitle(normalizeText(safeRequest.getTitle()));
+        normalizedRequest.setContent(normalizeText(safeRequest.getContent()));
+        normalizedRequest.setHazardType(normalizeEnumValue(safeRequest.getHazardType()));
+        normalizedRequest.setLocation(normalizeText(safeRequest.getLocation()));
+        return normalizedRequest;
+    }
+
+    private NeighborHelpEnhanceRequest normalizeNeighborHelpRequest(NeighborHelpEnhanceRequest request) {
+        NeighborHelpEnhanceRequest safeRequest = request == null ? new NeighborHelpEnhanceRequest() : request;
+        NeighborHelpEnhanceRequest normalizedRequest = new NeighborHelpEnhanceRequest();
+        normalizedRequest.setTitle(normalizeText(safeRequest.getTitle()));
+        normalizedRequest.setContent(normalizeText(safeRequest.getContent()));
+        normalizedRequest.setHelpType(normalizeEnumValue(safeRequest.getHelpType()));
+        normalizedRequest.setCategory(normalizeEnumValue(safeRequest.getCategory()));
+        return normalizedRequest;
+    }
+
+    private ServiceAppointmentEnhanceRequest normalizeServiceAppointmentRequest(ServiceAppointmentEnhanceRequest request) {
+        ServiceAppointmentEnhanceRequest safeRequest = request == null ? new ServiceAppointmentEnhanceRequest() : request;
+        ServiceAppointmentEnhanceRequest normalizedRequest = new ServiceAppointmentEnhanceRequest();
+        normalizedRequest.setTitle(normalizeText(safeRequest.getTitle()));
+        normalizedRequest.setContent(normalizeText(safeRequest.getContent()));
+        normalizedRequest.setServiceType(normalizeEnumValue(safeRequest.getServiceType()));
+        normalizedRequest.setAddress(normalizeText(safeRequest.getAddress()));
+        normalizedRequest.setAppointmentTime(normalizeText(safeRequest.getAppointmentTime()));
+        normalizedRequest.setRemark(normalizeText(safeRequest.getRemark()));
+        return normalizedRequest;
+    }
+
     private String safeValue(String value) {
-        return StrUtil.isBlank(value) ? "[未填写]" : value.trim();
+        String normalizedValue = normalizeText(value);
+        return StrUtil.isBlank(normalizedValue) ? "[未填写]" : normalizedValue;
     }
 
     private <T> T parseModelResponse(String content, Class<T> clazz) {
@@ -179,13 +226,21 @@ public class AIServiceImpl implements AIService {
             throw new IllegalStateException("AI 未返回有效内容，请稍后重试");
         }
 
-        String trimmedContent = content.trim();
+        String trimmedContent = stripCodeFence(content.trim());
         int startIndex = trimmedContent.indexOf('{');
         int endIndex = trimmedContent.lastIndexOf('}');
         if (startIndex < 0 || endIndex <= startIndex) {
             throw new IllegalStateException("AI 返回结果格式不正确，请稍后重试");
         }
         return trimmedContent.substring(startIndex, endIndex + 1);
+    }
+
+    private String stripCodeFence(String content) {
+        String normalizedContent = content;
+        normalizedContent = normalizedContent.replace("```json", "");
+        normalizedContent = normalizedContent.replace("```JSON", "");
+        normalizedContent = normalizedContent.replace("```", "");
+        return normalizedContent.trim();
     }
 
     private WorkOrderEnhanceResponse sanitizeWorkOrderResponse(WorkOrderEnhanceResponse response,
@@ -229,25 +284,28 @@ public class AIServiceImpl implements AIService {
     }
 
     private String resolveTitle(String aiTitle, String originalTitle, String originalContent, String defaultTitle) {
-        String title = firstNonBlank(aiTitle, originalTitle);
+        String title = normalizeTitle(firstNonBlank(aiTitle, originalTitle));
         if (StrUtil.isNotBlank(title)) {
-            return title.trim();
+            return title;
         }
         if (StrUtil.isNotBlank(originalContent)) {
-            String content = originalContent.trim();
-            return content.length() > 15 ? content.substring(0, 15) : content;
+            String content = normalizeText(originalContent);
+            if (StrUtil.isNotBlank(content)) {
+                return normalizeTitle(content.length() > 15 ? content.substring(0, 15) : content);
+            }
         }
         return defaultTitle;
     }
 
     private String resolveContent(String aiContent, String originalContent, String originalTitle, String defaultContent) {
         String content = firstNonBlank(aiContent, originalContent, originalTitle);
-        return StrUtil.isNotBlank(content) ? content.trim() : defaultContent;
+        content = normalizeText(content);
+        return StrUtil.isNotBlank(content) ? content : defaultContent;
     }
 
     private String resolveLocation(String aiLocation, String originalLocation) {
-        String location = firstNonBlank(aiLocation, originalLocation);
-        return StrUtil.isNotBlank(location) ? location.trim() : "[请补充具体位置]";
+        String location = normalizeText(firstNonBlank(aiLocation, originalLocation));
+        return StrUtil.isNotBlank(location) ? location : "[请补充具体位置]";
     }
 
     private String resolveWorkOrderType(String aiType, String originalType) {
@@ -306,12 +364,39 @@ public class AIServiceImpl implements AIService {
     }
 
     private String resolveRemark(String aiRemark, String originalRemark) {
-        String remark = firstNonBlank(aiRemark, originalRemark);
-        return StrUtil.isNotBlank(remark) ? remark.trim() : "如有特殊要求，请补充方便上门时间和注意事项。";
+        String remark = normalizeText(firstNonBlank(aiRemark, originalRemark));
+        return StrUtil.isNotBlank(remark) ? remark : "如有特殊要求，请补充方便上门时间和注意事项。";
     }
 
     private String normalizeEnumValue(String value) {
-        return StrUtil.isBlank(value) ? "" : value.trim().toUpperCase(Locale.ROOT);
+        if (StrUtil.isBlank(value)) {
+            return "";
+        }
+        String compactValue = value.trim()
+                .replace("：", "")
+                .replace(":", "")
+                .replace("_", "")
+                .replace("-", "")
+                .replace(" ", "")
+                .toUpperCase(Locale.ROOT);
+
+        return switch (compactValue) {
+            case "REPAIR", "报修", "维修", "维修服务", "设施维修", "修理" -> "REPAIR";
+            case "COMPLAINT", "投诉" -> "COMPLAINT";
+            case "SUGGESTION", "建议", "意见建议" -> "SUGGESTION";
+            case "OTHER", "其他", "其它", "未知" -> "OTHER";
+            case "FIRE", "消防", "消防隐患", "火灾", "火灾隐患" -> "FIRE";
+            case "THEFT", "盗窃", "治安", "治安隐患", "防盗" -> "THEFT";
+            case "TRAFFIC", "交通", "交通隐患", "道路交通", "道路隐患" -> "TRAFFIC";
+            case "SEEK", "求助", "寻求帮助", "需要帮助" -> "SEEK";
+            case "OFFER", "提供帮助", "可提供帮助", "我来帮忙" -> "OFFER";
+            case "DAILY", "日常", "生活", "日常帮助", "生活帮助" -> "DAILY";
+            case "SKILL", "技能", "技术", "专业技能" -> "SKILL";
+            case "ITEM", "物品", "物资", "闲置物品" -> "ITEM";
+            case "CLEAN", "保洁", "清洁", "打扫", "卫生" -> "CLEAN";
+            case "MEDICAL", "医疗", "医护", "健康", "就医" -> "MEDICAL";
+            default -> value.trim().toUpperCase(Locale.ROOT);
+        };
     }
 
     private String firstNonBlank(String... values) {
@@ -319,10 +404,44 @@ public class AIServiceImpl implements AIService {
             return null;
         }
         for (String value : values) {
-            if (StrUtil.isNotBlank(value)) {
-                return value;
+            String normalizedValue = normalizeText(value);
+            if (StrUtil.isNotBlank(normalizedValue)) {
+                return normalizedValue;
             }
         }
         return null;
+    }
+
+    private String normalizeText(String value) {
+        if (StrUtil.isBlank(value)) {
+            return null;
+        }
+        String normalizedValue = value.replace("\r\n", "\n")
+                .replace("\r", "\n")
+                .replaceAll("[ \t]{2,}", " ")
+                .replaceAll("\n{3,}", "\n\n")
+                .trim();
+        if (isPlaceholderOnly(normalizedValue)) {
+            return null;
+        }
+        return normalizedValue;
+    }
+
+    private String normalizeTitle(String value) {
+        String normalizedValue = normalizeText(value);
+        if (StrUtil.isBlank(normalizedValue)) {
+            return null;
+        }
+        normalizedValue = normalizedValue.replaceAll("[，。；;、,.!?！？]+$", "").trim();
+        return normalizedValue.length() > 20 ? normalizedValue.substring(0, 20) : normalizedValue;
+    }
+
+    private boolean isPlaceholderOnly(String value) {
+        return "[未填写]".equals(value)
+                || "未填写".equals(value)
+                || "未提供".equals(value)
+                || "暂无".equals(value)
+                || "NULL".equalsIgnoreCase(value)
+                || "N/A".equalsIgnoreCase(value);
     }
 }
