@@ -148,5 +148,6 @@ public class Constants {
         public static final String WORK_ORDER = "WORK_ORDER";
         public static final String VOLUNTEER = "VOLUNTEER";
         public static final String ACTIVITY_REGISTRATION = "ACTIVITY_REGISTRATION";
+        public static final String NOTICE = "NOTICE";
     }
 }

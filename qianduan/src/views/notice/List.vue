@@ -16,6 +16,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button @click="openSubscription">订阅设置</el-button>
           <el-button v-if="userStore.hasPerm('btn.notice.add')" type="success" @click="handleAdd">发布通知</el-button>
         </el-form-item>
       </el-form>
@@ -35,9 +36,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="publishTime" label="发布时间" width="160" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
+            <el-button v-if="userStore.hasPerm('btn.notice.stats')" link type="success" @click="handleStats(row)">统计</el-button>
             <el-button v-if="userStore.hasPerm('btn.notice.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button v-if="userStore.hasPerm('btn.notice.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -74,11 +76,40 @@
         <el-button type="primary" @click="handleSubmit" v-if="!isView">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="statsVisible" title="公告统计" width="420px">
+      <el-descriptions :column="1" border v-loading="statsLoading">
+        <el-descriptions-item label="公告标题">{{ statsNoticeTitle || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="浏览次数">{{ statsData.viewCount ?? 0 }}</el-descriptions-item>
+        <el-descriptions-item label="已读人数">{{ statsData.readCount ?? 0 }}</el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="statsVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="subscriptionVisible" title="通知订阅设置" width="460px">
+      <el-form label-width="110px">
+        <el-form-item label="通知">
+          <el-switch v-model="subscriptionForm.NOTICE" />
+        </el-form-item>
+        <el-form-item label="公告">
+          <el-switch v-model="subscriptionForm.ANNOUNCEMENT" />
+        </el-form-item>
+        <el-form-item label="新闻">
+          <el-switch v-model="subscriptionForm.NEWS" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="subscriptionVisible = false">取消</el-button>
+        <el-button type="primary" :loading="subscriptionSaving" @click="saveSubscription">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { noticeApi } from '../../api'
 import { useUserStore } from '../../stores/user'
@@ -94,6 +125,17 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogMode = ref('add')
 const form = ref({})
+const statsVisible = ref(false)
+const statsLoading = ref(false)
+const statsData = ref({})
+const statsNoticeTitle = ref('')
+const subscriptionVisible = ref(false)
+const subscriptionSaving = ref(false)
+const subscriptionForm = ref({
+  NOTICE: true,
+  ANNOUNCEMENT: true,
+  NEWS: true
+})
 
 const dialogTitle = computed(() => ({ add: '发布通知', edit: '编辑通知', view: '通知详情' }[dialogMode.value]))
 const isView = computed(() => dialogMode.value === 'view')
@@ -123,6 +165,39 @@ const handleView = async (row) => {
   form.value = res.data
   dialogMode.value = 'view'
   dialogVisible.value = true
+}
+
+const handleStats = async (row) => {
+  statsVisible.value = true
+  statsLoading.value = true
+  statsNoticeTitle.value = row.title
+  try {
+    const res = await noticeApi.getStats(row.id)
+    statsData.value = res?.data || {}
+  } finally {
+    statsLoading.value = false
+  }
+}
+
+const openSubscription = async () => {
+  const res = await noticeApi.mySubscriptions()
+  subscriptionForm.value = {
+    NOTICE: res?.data?.NOTICE ?? true,
+    ANNOUNCEMENT: res?.data?.ANNOUNCEMENT ?? true,
+    NEWS: res?.data?.NEWS ?? true
+  }
+  subscriptionVisible.value = true
+}
+
+const saveSubscription = async () => {
+  subscriptionSaving.value = true
+  try {
+    await noticeApi.saveSubscriptions(subscriptionForm.value)
+    ElMessage.success('订阅设置已保存')
+    subscriptionVisible.value = false
+  } finally {
+    subscriptionSaving.value = false
+  }
 }
 
 const handleSubmit = async () => {

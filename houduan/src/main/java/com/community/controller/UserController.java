@@ -2,6 +2,7 @@ package com.community.controller;
 
 import com.community.annotation.Auth;
 import com.community.annotation.Log;
+import com.community.common.Constants;
 import com.community.common.Result;
 import com.community.entity.SysUser;
 import com.community.service.SysPermissionService;
@@ -74,6 +75,15 @@ public class UserController {
         if (userService.findByUsername(user.getUsername()) != null) {
             return Result.error("用户名已存在");
         }
+        if (user.getPhone() != null && userService.existsByPhone(user.getPhone(), null)) {
+            return Result.error("手机号已存在");
+        }
+        if (user.getRole() == null || user.getRole().isBlank()) {
+            user.setRole(Constants.Role.USER);
+        }
+        if (!Constants.Role.ADMIN.equals(user.getRole()) && !Constants.Role.USER.equals(user.getRole())) {
+            return Result.error("角色类型无效");
+        }
         // 对密码进行加密
         user.setPassword(PasswordEncoderUtil.encode(user.getPassword()));
         user.setAvatar("https://tu.ltyuanfang.cn/api/fengjing.php");
@@ -85,17 +95,30 @@ public class UserController {
     @Auth(permissions = {"btn.user.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody SysUser user) {
+        SysUser existingUser = userService.getUserById(id);
+        if (existingUser == null) {
+            return Result.error("用户不存在");
+        }
+        if (user.getPhone() != null && userService.existsByPhone(user.getPhone(), id)) {
+            return Result.error("手机号已存在");
+        }
         user.setId(id);
         // 如果提供了密码，需要加密
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             user.setPassword(PasswordEncoderUtil.encode(user.getPassword()));
         } else {
             // 如果没提供密码，不更新密码字段
-            SysUser existingUser = userService.getUserById(id);
             user.setPassword(existingUser.getPassword());
         }
-        // 不能修改角色字段
-        user.setRole(null);
+        if (user.getRole() == null || user.getRole().isBlank()) {
+            user.setRole(existingUser.getRole());
+        }
+        if (!Constants.Role.ADMIN.equals(user.getRole()) && !Constants.Role.USER.equals(user.getRole())) {
+            return Result.error("角色类型无效");
+        }
+        if (user.getAvatar() == null || user.getAvatar().isBlank()) {
+            user.setAvatar(existingUser.getAvatar());
+        }
         userService.updateById(user);
         return Result.success();
     }

@@ -15,6 +15,28 @@
             <el-option label="已完成" :value="2" /><el-option label="已关闭" :value="3" />
           </el-select>
         </el-form-item>
+        <el-form-item label="超时状态">
+          <el-select v-model="query.isOvertime" placeholder="请选择" clearable style="width: 140px">
+            <el-option label="正常" :value="0" />
+            <el-option label="已超时" :value="1" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="截止日期">
+          <el-date-picker
+            v-model="query.deadlineRange"
+            type="daterange"
+            unlink-panels
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+          />
+        </el-form-item>
+        <el-form-item v-if="canAssign" label="责任人">
+          <el-select v-model="query.assigneeId" placeholder="请选择" clearable style="width: 180px">
+            <el-option v-for="u in userOptions" :key="u.id" :label="`${u.realName || u.username}(${u.id})`" :value="u.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -35,6 +57,15 @@
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="statusType[row.status]">{{ statusMap[row.status] }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="assigneeId" label="责任人" width="140">
+          <template #default="{ row }">{{ formatAssignee(row.assigneeId) }}</template>
+        </el-table-column>
+        <el-table-column prop="deadline" label="截止时间" width="180" />
+        <el-table-column label="超时" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.isOvertime === 1 ? 'danger' : 'success'">{{ row.isOvertime === 1 ? '已超时' : '正常' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="提交时间" width="160" />
@@ -68,6 +99,20 @@
             <el-option label="低" :value="0" /><el-option label="中" :value="1" /><el-option label="高" :value="2" />
           </el-select>
         </el-form-item>
+        <el-form-item v-if="canAssign" label="责任人">
+          <el-select v-model="form.assigneeId" clearable :disabled="isView" style="width: 100%">
+            <el-option v-for="u in userOptions" :key="u.id" :label="`${u.realName || u.username}(${u.id})`" :value="u.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="截止时间" v-if="canSetDeadline || isView">
+          <el-date-picker
+            v-model="form.deadline"
+            type="datetime"
+            placeholder="请选择截止时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            :disabled="isView"
+          />
+        </el-form-item>
         <el-form-item label="内容"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
         <el-form-item label="AI辅助" v-if="!isView && !isHandle">
           <div style="width: 100%">
@@ -96,7 +141,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { workOrderApi, exportApi } from '../../api'
+import { workOrderApi, exportApi, userApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
@@ -105,7 +150,8 @@ const statusMap = { 0: '待处理', 1: '处理中', 2: '已完成', 3: '已关�
 const statusType = { 0: 'warning', 1: 'primary', 2: 'success', 3: 'info' }
 const priorityMap = { 0: '低', 1: '中', 2: '高' }
 const priorityType = { 0: 'info', 1: 'warning', 2: 'danger' }
-const query = ref({ pageNum: 1, pageSize: 10, title: '', orderType: '', status: null })
+const userOptions = ref([])
+const query = ref({ pageNum: 1, pageSize: 10, title: '', orderType: '', status: null, isOvertime: null, deadlineRange: [], assigneeId: null })
 const tableData = ref([])
 const total = ref(0)
 const loading = ref(false)
@@ -118,38 +164,80 @@ const dialogTitle = computed(() => ({ add: '提交工单', edit: '编辑工单',
 const isView = computed(() => dialogMode.value === 'view')
 const isHandle = computed(() => dialogMode.value === 'handle')
 const isEdit = computed(() => dialogMode.value === 'edit')
+const canAssign = computed(() => userStore.hasPerm('btn.workorder.handle'))
+const canSetDeadline = computed(() => canAssign.value || isEdit.value)
 
 const loadData = async () => {
   loading.value = true
-  const res = await workOrderApi.list(query.value)
-  tableData.value = res.data.records
-  total.value = res.data.total
-  loading.value = false
+  try {
+    const params = {
+      pageNum: query.value.pageNum,
+      pageSize: query.value.pageSize,
+      title: query.value.title?.trim() || undefined,
+      orderType: query.value.orderType || undefined,
+      status: query.value.status,
+      isOvertime: query.value.isOvertime,
+      assigneeId: query.value.assigneeId || undefined,
+      deadlineStart: query.value.deadlineRange?.[0] || undefined,
+      deadlineEnd: query.value.deadlineRange?.[1] || undefined
+    }
+    const res = await workOrderApi.list(params)
+    tableData.value = res.data.records
+    total.value = res.data.total
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadUsers = async () => {
+  if (!canAssign.value) {
+    userOptions.value = []
+    return
+  }
+  const res = await userApi.list({ pageNum: 1, pageSize: 500 })
+  userOptions.value = res?.data?.records || []
+}
+
+const normalizeDateTime = (value) => {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    return value.replace('T', ' ').slice(0, 19)
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (num) => String(num).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+const formatAssignee = (assigneeId) => {
+  if (!assigneeId) return '-'
+  const user = userOptions.value.find((item) => item.id === assigneeId)
+  return user ? `${user.realName || user.username}(${assigneeId})` : `用户${assigneeId}`
 }
 
 const handleAdd = () => {
-  form.value = { priority: 1, orderType: 'REPAIR' }
+  form.value = { priority: 1, orderType: 'REPAIR', assigneeId: null, deadline: '' }
   aiLoading.value = false
   dialogMode.value = 'add'
   dialogVisible.value = true
 }
 
 const handleHandle = (row) => {
-  form.value = { ...row, status: 1 }
+  form.value = { ...row, status: 1, deadline: normalizeDateTime(row.deadline) }
   aiLoading.value = false
   dialogMode.value = 'handle'
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
-  form.value = { ...row }
+  form.value = { ...row, deadline: normalizeDateTime(row.deadline) }
   aiLoading.value = false
   dialogMode.value = 'edit'
   dialogVisible.value = true
 }
 
 const handleView = (row) => {
-  form.value = { ...row }
+  form.value = { ...row, deadline: normalizeDateTime(row.deadline) }
   aiLoading.value = false
   dialogMode.value = 'view'
   dialogVisible.value = true
@@ -207,9 +295,12 @@ const handleExport = () => {
 }
 
 const handleReset = () => {
-  query.value = { pageNum: 1, pageSize: 10, title: '', orderType: '', status: null }
+  query.value = { pageNum: 1, pageSize: 10, title: '', orderType: '', status: null, isOvertime: null, deadlineRange: [], assigneeId: null }
   loadData()
 }
 
-onMounted(loadData)
+onMounted(async () => {
+  await loadUsers()
+  await loadData()
+})
 </script>

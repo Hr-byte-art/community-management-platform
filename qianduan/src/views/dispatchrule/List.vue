@@ -4,7 +4,10 @@
       <template #header>
         <div class="header-row">
           <span>网格化自动派单规则</span>
-          <el-button v-if="userStore.hasPerm('btn.dispatch.rule.add')" type="primary" @click="openAdd">新增规则</el-button>
+          <div class="header-actions">
+            <el-button v-if="userStore.hasPerm('btn.dispatch.rule.preview')" @click="openPreview">规则预览</el-button>
+            <el-button v-if="userStore.hasPerm('btn.dispatch.rule.add')" type="primary" @click="openAdd">新增规则</el-button>
+          </div>
         </div>
       </template>
 
@@ -102,6 +105,40 @@
         <el-button type="primary" @click="submit">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="previewVisible" title="派单规则预览" width="520px">
+      <el-form :model="previewForm" label-width="90px">
+        <el-form-item label="工单类型">
+          <el-select v-model="previewForm.orderType" clearable style="width: 100%">
+            <el-option label="报修" value="REPAIR" />
+            <el-option label="投诉" value="COMPLAINT" />
+            <el-option label="建议" value="SUGGESTION" />
+            <el-option label="其他" value="OTHER" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="优先级">
+          <el-select v-model="previewForm.priority" clearable style="width: 100%">
+            <el-option label="低" :value="0" />
+            <el-option label="中" :value="1" />
+            <el-option label="高" :value="2" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="预览结果">
+          <el-alert
+            v-if="previewLoaded"
+            :title="previewResult ? `命中责任人：${formatAssignee(previewResult)}` : '未命中规则'"
+            :type="previewResult ? 'success' : 'warning'"
+            :closable="false"
+            show-icon
+          />
+          <span v-else class="preview-placeholder">请选择工单类型和优先级后进行预览</span>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="previewVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="previewLoading" @click="handlePreview">开始预览</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -119,6 +156,10 @@ const userOptions = ref([])
 const query = ref({ pageNum: 1, pageSize: 10, gridName: '', orderType: '', enabled: null })
 
 const dialogVisible = ref(false)
+const previewVisible = ref(false)
+const previewLoading = ref(false)
+const previewLoaded = ref(false)
+const previewResult = ref(null)
 const form = ref({
   gridName: '',
   orderType: '',
@@ -126,6 +167,10 @@ const form = ref({
   assigneeId: null,
   enabled: 1,
   remark: ''
+})
+const previewForm = ref({
+  orderType: '',
+  priority: null
 })
 
 const loadUsers = async () => {
@@ -171,6 +216,27 @@ const openEdit = (row) => {
   dialogVisible.value = true
 }
 
+const openPreview = () => {
+  previewForm.value = { orderType: '', priority: null }
+  previewResult.value = null
+  previewLoaded.value = false
+  previewVisible.value = true
+}
+
+const handlePreview = async () => {
+  previewLoading.value = true
+  try {
+    const res = await dispatchRuleApi.preview({
+      orderType: previewForm.value.orderType || undefined,
+      priority: previewForm.value.priority
+    })
+    previewResult.value = res?.data || null
+    previewLoaded.value = true
+  } finally {
+    previewLoading.value = false
+  }
+}
+
 const submit = async () => {
   if (!form.value.assigneeId) {
     ElMessage.warning('请选择责任人')
@@ -209,7 +275,14 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
 }
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
 .mb12 {
   margin-bottom: 12px;
+}
+.preview-placeholder {
+  color: #909399;
 }
 </style>

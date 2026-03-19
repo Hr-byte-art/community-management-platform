@@ -11,6 +11,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button v-if="userStore.isAdmin()" type="warning" @click="handleExport">导出Excel</el-button>
           <el-button v-if="userStore.hasPerm('btn.floating.add')" type="success" @click="handleAdd">登记流动人口</el-button>
         </el-form-item>
       </el-form>
@@ -68,7 +69,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { floatingApi } from '../../api'
+import { floatingApi, exportApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import { idCardRule, phoneRule } from '../../utils/validation'
 
@@ -133,6 +134,12 @@ const handleDelete = (row) => {
     ElMessage.success('删除成功')
     loadData()
   })
+}
+
+const handleExport = () => {
+  const link = document.createElement('a')
+  link.href = exportApi.floating() + '?token=' + userStore.token
+  link.click()
 }
 
 const handleReset = () => {

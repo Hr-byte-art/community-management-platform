@@ -12,6 +12,7 @@
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button v-if="userStore.isAdmin()" type="warning" @click="handleExport">导出Excel</el-button>
           <el-button v-if="userStore.hasPerm('btn.activity.add')" type="success" @click="handleAdd">发布活动</el-button>
         </el-form-item>
       </el-form>
@@ -68,9 +69,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { activityApi } from '../../api'
+import { activityApi, exportApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
@@ -148,6 +149,12 @@ const handleDelete = (row) => {
     ElMessage.success('删除成功')
     loadData()
   })
+}
+
+const handleExport = () => {
+  const link = document.createElement('a')
+  link.href = exportApi.activity() + '?token=' + userStore.token
+  link.click()
 }
 
 const handleReset = () => {
