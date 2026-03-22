@@ -1,4 +1,4 @@
-/*
+﻿/*
  Navicat Premium Data Transfer
 
  Source Server         : localhost_3306
@@ -32,7 +32,7 @@ CREATE TABLE `activity_registration`  (
   `register_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) COMMENT '报名时间',
   `check_in_time` datetime(0) NULL DEFAULT NULL COMMENT '签到时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '活动报名表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '活动报名表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for community_activity
@@ -52,7 +52,7 @@ CREATE TABLE `community_activity`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '社区活动表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '社区活动表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for family_relation
@@ -65,7 +65,7 @@ CREATE TABLE `family_relation`  (
   `relation` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '关系：SPOUSE-配偶，PARENT-父母，CHILD-子女，SIBLING-兄弟姐妹',
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '家庭关系表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '家庭关系表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for floating_population
@@ -88,7 +88,7 @@ CREATE TABLE `floating_population`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '流动人口表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '流动人口表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for grid_dispatch_rule
@@ -108,7 +108,7 @@ CREATE TABLE `grid_dispatch_rule`  (
   INDEX `idx_dispatch_order_type_priority`(`order_type`, `priority`) USING BTREE,
   INDEX `idx_dispatch_enabled`(`enabled`) USING BTREE,
   INDEX `idx_dispatch_assignee`(`assignee_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '网格化自动派单规则表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '网格化自动派单规则表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for message_notice
@@ -126,7 +126,7 @@ CREATE TABLE `message_notice`  (
   `read_time` datetime(0) NULL DEFAULT NULL COMMENT '已读时间',
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '站内消息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '站内消息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for neighbor_help
@@ -146,7 +146,7 @@ CREATE TABLE `neighbor_help`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '邻里互助表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '邻里互助表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for notice
@@ -166,7 +166,7 @@ CREATE TABLE `notice`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '通知公告表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '通知公告表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for notice_read_record
@@ -178,7 +178,7 @@ CREATE TABLE `notice_read_record`  (
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
   `read_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) COMMENT '阅读时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '通知阅读记录表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '通知阅读记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for operation_log
@@ -195,7 +195,7 @@ CREATE TABLE `operation_log`  (
   `time` bigint(20) NULL DEFAULT NULL COMMENT '执行时长(毫秒)',
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 34 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for points_account
@@ -209,7 +209,7 @@ CREATE TABLE `points_account`  (
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_id`(`user_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '积分账户表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '积分账户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for points_record
@@ -252,7 +252,7 @@ CREATE TABLE `resident`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '居民信息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '居民信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for security_hazard
@@ -273,7 +273,7 @@ CREATE TABLE `security_hazard`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '治安隐患表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '治安隐患表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for service_appointment
@@ -294,7 +294,7 @@ CREATE TABLE `service_appointment`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '服务预约表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '服务预约表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for service_evaluation
@@ -331,7 +331,7 @@ CREATE TABLE `service_guide`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '办事指南表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '办事指南表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_permission
@@ -354,7 +354,7 @@ CREATE TABLE `sys_permission`  (
   UNIQUE INDEX `uk_permission_code`(`permission_code`) USING BTREE,
   INDEX `idx_permission_type_status`(`permission_type`, `status`) USING BTREE,
   INDEX `idx_permission_module`(`module_key`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 92 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '权限点表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '权限点表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_role_permission
@@ -369,7 +369,7 @@ CREATE TABLE `sys_role_permission`  (
   UNIQUE INDEX `uk_role_permission`(`role_code`, `permission_code`) USING BTREE,
   INDEX `idx_role_code`(`role_code`) USING BTREE,
   INDEX `idx_role_permission_code`(`permission_code`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 167 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '角色权限关联表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '角色权限关联表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for sys_user
@@ -389,7 +389,7 @@ CREATE TABLE `sys_user`  (
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `username`(`username`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for volunteer
@@ -408,7 +408,7 @@ CREATE TABLE `volunteer`  (
   `create_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
   `update_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '志愿者表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '志愿者表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for work_order
@@ -435,7 +435,7 @@ CREATE TABLE `work_order`  (
   INDEX `idx_work_order_deadline`(`deadline`) USING BTREE,
   INDEX `idx_work_order_assignee`(`assignee_id`) USING BTREE,
   INDEX `idx_work_order_overtime_status`(`is_overtime`, `status`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 50 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '工单表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '工单表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for notice_subscription
@@ -742,10 +742,10 @@ INSERT INTO `grid_dispatch_rule` (`grid_name`, `order_type`, `priority`, `assign
 -- ----------------------------
 -- Demo updates for overtime / assignee
 -- ----------------------------
-UPDATE `work_order` SET `assignee_id` = 1, `deadline` = DATE_SUB(NOW(), INTERVAL 2 DAY), `is_overtime` = 1 WHERE `id` = 2;
-UPDATE `work_order` SET `assignee_id` = 7, `deadline` = DATE_SUB(NOW(), INTERVAL 1 DAY), `is_overtime` = 1 WHERE `id` = 3;
-UPDATE `work_order` SET `assignee_id` = 7, `deadline` = TIMESTAMP(CURDATE(), '18:00:00'), `is_overtime` = 0 WHERE `id` = 4;
-UPDATE `work_order` SET `assignee_id` = 1, `deadline` = DATE_ADD(NOW(), INTERVAL 2 DAY), `is_overtime` = 0 WHERE `id` = 6;
+UPDATE `work_order` SET `assignee_id` = 1, `deadline` = DATE_SUB(NOW(), INTERVAL 2 DAY), `is_overtime` = 1 WHERE `title` = '邻居噪音扰民';
+UPDATE `work_order` SET `assignee_id` = 7, `deadline` = DATE_SUB(NOW(), INTERVAL 1 DAY), `is_overtime` = 1 WHERE `title` = '建议增设健身器材';
+UPDATE `work_order` SET `assignee_id` = 7, `deadline` = TIMESTAMP(CURDATE(), '18:00:00'), `is_overtime` = 0 WHERE `title` = '电梯故障';
+UPDATE `work_order` SET `assignee_id` = 1, `deadline` = DATE_ADD(NOW(), INTERVAL 2 DAY), `is_overtime` = 0 WHERE `title` = '路灯损坏';
 
 -- ----------------------------
 -- Extra indexes

@@ -42,8 +42,9 @@
               </template>
             </el-table-column>
             <el-table-column prop="content" label="内容" min-width="220" show-overflow-tooltip />
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column label="操作" width="140" fixed="right">
               <template #default="{ row }">
+                <el-button link type="primary" @click="viewDetail(row)">详情</el-button>
                 <el-button v-if="userStore.hasPerm('btn.message.read')" link type="primary" :disabled="row.isRead === 1" @click="markRead(row)">已读</el-button>
               </template>
             </el-table-column>
@@ -90,6 +91,11 @@
               </template>
             </el-table-column>
             <el-table-column prop="createTime" label="发送时间" width="170" />
+            <el-table-column label="操作" width="90" fixed="right">
+              <template #default="{ row }">
+                <el-button link type="primary" @click="viewDetail(row, true)">详情</el-button>
+              </template>
+            </el-table-column>
           </el-table>
 
           <el-pagination
@@ -103,6 +109,33 @@
         </el-tab-pane>
       </el-tabs>
     </el-card>
+
+    <el-dialog v-model="detailVisible" title="消息详情" width="620px">
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="标题">{{ detailRow.title || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="消息类型">{{ detailRow.messageType || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="发送时间">{{ detailRow.createTime || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="用户ID" v-if="detailIsAdmin">{{ detailRow.userId || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="业务类型">{{ detailRow.businessType || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="业务ID">{{ detailRow.businessId || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="阅读状态">
+          {{ detailRow.isRead === 1 ? '已读' : '未读' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="消息内容">
+          <div class="detail-content">{{ detailRow.content || '-' }}</div>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button
+          v-if="!detailIsAdmin && detailRow.id && detailRow.isRead !== 1 && userStore.hasPerm('btn.message.read')"
+          type="primary"
+          @click="markRead(detailRow, true)"
+        >
+          标记为已读
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -118,6 +151,9 @@ const isAdmin = computed(() => userStore.hasPerm('btn.message.admin_list'))
 const loading = ref(false)
 const unreadCount = ref(0)
 const activeTab = ref('my')
+const detailVisible = ref(false)
+const detailIsAdmin = ref(false)
+const detailRow = ref({})
 
 const myList = ref([])
 const myTotal = ref(0)
@@ -167,13 +203,17 @@ const loadAdminMessages = async () => {
   }
 }
 
-const markRead = async (row) => {
+const markRead = async (row, keepDialog = false) => {
   if (!row?.id || row.isRead === 1) {
     return
   }
   await messageApi.read(row.id)
+  row.isRead = 1
   ElMessage.success('已标记为已读')
   await loadMyMessages()
+  if (keepDialog) {
+    detailRow.value = { ...detailRow.value, isRead: 1 }
+  }
 }
 
 const markAllRead = async () => {
@@ -200,6 +240,12 @@ const loadCurrent = () => {
   }
 }
 
+const viewDetail = (row, isAdminRow = false) => {
+  detailRow.value = { ...row }
+  detailIsAdmin.value = isAdminRow
+  detailVisible.value = true
+}
+
 onMounted(async () => {
   await loadUnreadCount()
   await loadMyMessages()
@@ -219,6 +265,10 @@ onMounted(async () => {
 }
 .filter-row {
   margin-bottom: 12px;
+}
+.detail-content {
+  white-space: pre-wrap;
+  line-height: 1.6;
 }
 </style>
 

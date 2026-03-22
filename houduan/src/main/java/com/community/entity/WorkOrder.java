@@ -43,6 +43,9 @@ public class WorkOrder {
 
     @TableField(exist = false)
     private Integer evaluated;
+
+    @TableField(exist = false)
+    private String assigneeName;
     
     @ExcelProperty(value = "状态", converter = WorkOrderStatusConverter.class)
     private Integer status;

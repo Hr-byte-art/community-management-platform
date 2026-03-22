@@ -1,75 +1,41 @@
-﻿<template>
+<template>
   <div class="home">
     <el-row :gutter="16" class="stat-row">
-      <el-col :xs="12" :sm="8" :md="8" :lg="4">
+      <el-col v-for="item in statCards" :key="item.label" :xs="12" :sm="8" :md="8" :lg="6">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <div class="stat-icon blue"><el-icon><User /></el-icon></div>
+            <div class="stat-icon" :class="item.iconClass">
+              <el-icon><component :is="item.icon" /></el-icon>
+            </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.residentCount }}</div>
-              <div class="stat-label">居民总数</div>
+              <div class="stat-value">{{ item.value }}</div>
+              <div class="stat-label">{{ item.label }}</div>
             </div>
           </div>
         </el-card>
       </el-col>
+    </el-row>
 
-      <el-col :xs="12" :sm="8" :md="8" :lg="4">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon green"><el-icon><Calendar /></el-icon></div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.activityCount }}</div>
-              <div class="stat-label">社区活动</div>
-            </div>
-          </div>
+    <el-row :gutter="16" class="quality-row">
+      <el-col :xs="24" :lg="8">
+        <el-card shadow="hover" class="quality-card">
+          <div class="quality-title">服务评价总量</div>
+          <div class="quality-value">{{ stats.evaluationTotal }}</div>
+          <div class="quality-subtitle">已沉淀满意度反馈数据</div>
         </el-card>
       </el-col>
-
-      <el-col :xs="12" :sm="8" :md="8" :lg="4">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon orange"><el-icon><Tickets /></el-icon></div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.pendingOrderCount }}</div>
-              <div class="stat-label">待处理工单</div>
-            </div>
-          </div>
+      <el-col :xs="24" :lg="8">
+        <el-card shadow="hover" class="quality-card">
+          <div class="quality-title">平均评分</div>
+          <div class="quality-value">{{ stats.avgScore }}</div>
+          <el-rate :model-value="Number(stats.avgScore || 0)" disabled allow-half show-score text-color="#ff9900" />
         </el-card>
       </el-col>
-
-      <el-col :xs="12" :sm="8" :md="8" :lg="4">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon red"><el-icon><Warning /></el-icon></div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.overtimeOrderCount }}</div>
-              <div class="stat-label">超时未结工单</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="12" :sm="8" :md="8" :lg="4">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon yellow"><el-icon><Clock /></el-icon></div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.todayTodoOrderCount }}</div>
-              <div class="stat-label">今日待办工单</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="12" :sm="8" :md="8" :lg="4">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon purple"><el-icon><DataLine /></el-icon></div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.orderCompletionRate }}</div>
-              <div class="stat-label">工单完成率</div>
-            </div>
-          </div>
+      <el-col :xs="24" :lg="8">
+        <el-card shadow="hover" class="quality-card">
+          <div class="quality-title">满意率</div>
+          <div class="quality-value">{{ stats.satisfactionRate }}%</div>
+          <el-progress :percentage="Number(stats.satisfactionRate || 0)" :stroke-width="10" status="success" />
         </el-card>
       </el-col>
     </el-row>
@@ -103,12 +69,28 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <el-row :gutter="20" class="chart-row">
+      <el-col :xs="24" :lg="8">
+        <el-card>
+          <template #header><span>服务评价分布</span></template>
+          <div ref="evaluationScoreChartRef" class="chart-box"></div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :lg="16">
+        <el-card>
+          <template #header><span>治理风险聚焦</span></template>
+          <div ref="riskFocusChartRef" class="chart-box"></div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
+import { Calendar, Clock, DataLine, Tickets, User, Warning, Bell, Opportunity } from '@element-plus/icons-vue'
 import { statisticsApi } from '../api'
 
 const stats = ref({
@@ -117,18 +99,38 @@ const stats = ref({
   pendingOrderCount: 0,
   overtimeOrderCount: 0,
   todayTodoOrderCount: 0,
-  orderCompletionRate: '0%'
+  orderCompletionRate: '0%',
+  noticeCount: 0,
+  pendingHazardCount: 0,
+  evaluationTotal: 0,
+  avgScore: '0.0',
+  satisfactionRate: '0.0'
 })
 
 const workOrderTypeChartRef = ref(null)
 const workOrderMonthChartRef = ref(null)
 const activityTypeChartRef = ref(null)
 const summaryChartRef = ref(null)
+const evaluationScoreChartRef = ref(null)
+const riskFocusChartRef = ref(null)
 
 let workOrderTypeChart = null
 let workOrderMonthChart = null
 let activityTypeChart = null
 let summaryChart = null
+let evaluationScoreChart = null
+let riskFocusChart = null
+
+const statCards = computed(() => [
+  { label: '居民总数', value: stats.value.residentCount, icon: User, iconClass: 'blue' },
+  { label: '社区活动', value: stats.value.activityCount, icon: Calendar, iconClass: 'green' },
+  { label: '待处理工单', value: stats.value.pendingOrderCount, icon: Tickets, iconClass: 'orange' },
+  { label: '超时未结工单', value: stats.value.overtimeOrderCount, icon: Warning, iconClass: 'red' },
+  { label: '今日待办工单', value: stats.value.todayTodoOrderCount, icon: Clock, iconClass: 'yellow' },
+  { label: '工单完成率', value: stats.value.orderCompletionRate, icon: DataLine, iconClass: 'purple' },
+  { label: '已发布公告', value: stats.value.noticeCount, icon: Bell, iconClass: 'cyan' },
+  { label: '待处理隐患', value: stats.value.pendingHazardCount, icon: Opportunity, iconClass: 'rose' }
+])
 
 const calcCompletionRate = (overview) => {
   const total = Number(overview?.totalOrderCount || 0)
@@ -278,11 +280,100 @@ const initSummaryChart = (overview = {}) => {
   })
 }
 
+const initEvaluationScoreChart = (evaluationStats = {}) => {
+  if (!evaluationScoreChartRef.value) return
+  evaluationScoreChart?.dispose()
+  evaluationScoreChart = echarts.init(evaluationScoreChartRef.value)
+
+  const values = [
+    Number(evaluationStats.score1 || 0),
+    Number(evaluationStats.score2 || 0),
+    Number(evaluationStats.score3 || 0),
+    Number(evaluationStats.score4 || 0),
+    Number(evaluationStats.score5 || 0)
+  ]
+
+  evaluationScoreChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: {
+      type: 'category',
+      data: ['1星', '2星', '3星', '4星', '5星'],
+      axisLine: { lineStyle: { color: '#ddd' } }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: { lineStyle: { color: '#eee' } }
+    },
+    grid: { left: '6%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+    series: [
+      {
+        type: 'bar',
+        data: values,
+        barWidth: '46%',
+        itemStyle: {
+          color: (params) => ['#f56c6c', '#e6a23c', '#d3d76b', '#67c23a', '#409eff'][params.dataIndex],
+          borderRadius: [4, 4, 0, 0]
+        }
+      }
+    ]
+  })
+}
+
+const initRiskFocusChart = (overview = {}) => {
+  if (!riskFocusChartRef.value) return
+  riskFocusChart?.dispose()
+  riskFocusChart = echarts.init(riskFocusChartRef.value)
+
+  riskFocusChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: {
+      type: 'category',
+      data: ['待处理工单', '超时工单', '今日待办', '待处理隐患'],
+      axisLine: { lineStyle: { color: '#ddd' } }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: { lineStyle: { color: '#eee' } }
+    },
+    grid: { left: '4%', right: '3%', bottom: '10%', top: '10%', containLabel: true },
+    series: [
+      {
+        type: 'line',
+        smooth: true,
+        symbolSize: 10,
+        data: [
+          Number(overview.pendingOrderCount || 0),
+          Number(overview.overtimeOrderCount || 0),
+          Number(overview.todayTodoOrderCount || 0),
+          Number(overview.pendingHazardCount || 0)
+        ],
+        itemStyle: { color: '#f56c6c' },
+        lineStyle: { width: 3, color: '#f56c6c' },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(245, 108, 108, 0.35)' },
+              { offset: 1, color: 'rgba(245, 108, 108, 0.05)' }
+            ]
+          }
+        }
+      }
+    ]
+  })
+}
+
 const handleResize = () => {
   workOrderTypeChart?.resize()
   workOrderMonthChart?.resize()
   activityTypeChart?.resize()
   summaryChart?.resize()
+  evaluationScoreChart?.resize()
+  riskFocusChart?.resize()
 }
 
 const loadDashboard = async () => {
@@ -293,13 +384,19 @@ const loadDashboard = async () => {
   ])
 
   const overview = overviewRes?.data || {}
+  const evaluationStats = overview.evaluationStats || {}
   stats.value = {
     residentCount: Number(overview.residentCount || 0),
     activityCount: Number(overview.activityCount || 0),
     pendingOrderCount: Number(overview.pendingOrderCount || 0),
     overtimeOrderCount: Number(overview.overtimeOrderCount || 0),
     todayTodoOrderCount: Number(overview.todayTodoOrderCount || 0),
-    orderCompletionRate: calcCompletionRate(overview)
+    orderCompletionRate: calcCompletionRate(overview),
+    noticeCount: Number(overview.noticeCount || 0),
+    pendingHazardCount: Number(overview.pendingHazardCount || 0),
+    evaluationTotal: Number(evaluationStats.total || 0),
+    avgScore: Number(evaluationStats.avgScore || 0).toFixed(1),
+    satisfactionRate: Number(evaluationStats.satisfactionRate || 0).toFixed(1)
   }
 
   await nextTick()
@@ -307,6 +404,8 @@ const loadDashboard = async () => {
   initWorkOrderMonthChart(workorderRes?.data?.byMonth || [])
   initActivityTypeChart(activityRes?.data?.byType || [])
   initSummaryChart(overview)
+  initEvaluationScoreChart(evaluationStats)
+  initRiskFocusChart(overview)
 }
 
 onMounted(async () => {
@@ -323,6 +422,8 @@ onUnmounted(() => {
   workOrderMonthChart?.dispose()
   activityTypeChart?.dispose()
   summaryChart?.dispose()
+  evaluationScoreChart?.dispose()
+  riskFocusChart?.dispose()
 })
 </script>
 
@@ -331,7 +432,8 @@ onUnmounted(() => {
   padding: 0;
 }
 
-.stat-row {
+.stat-row,
+.quality-row {
   margin-bottom: 20px;
 }
 
@@ -380,6 +482,14 @@ onUnmounted(() => {
   background: #7a60ff;
 }
 
+.stat-icon.cyan {
+  background: #16b1ff;
+}
+
+.stat-icon.rose {
+  background: #e85d75;
+}
+
 .stat-info {
   margin-left: 12px;
 }
@@ -392,6 +502,27 @@ onUnmounted(() => {
 
 .stat-label {
   margin-top: 4px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.quality-card {
+  min-height: 150px;
+}
+
+.quality-title {
+  color: #909399;
+  margin-bottom: 10px;
+}
+
+.quality-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #303133;
+  margin-bottom: 10px;
+}
+
+.quality-subtitle {
   color: #909399;
   font-size: 13px;
 }

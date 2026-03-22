@@ -12,7 +12,9 @@ import com.community.service.GridDispatchRuleService;
 import com.community.service.MessageNoticeService;
 import com.community.service.ServiceEvaluationService;
 import com.community.service.SysPermissionService;
+import com.community.service.SysUserService;
 import com.community.service.WorkOrderService;
+import com.community.entity.SysUser;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,6 +23,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/workorder")
@@ -35,6 +41,8 @@ public class WorkOrderController {
     private ServiceEvaluationService serviceEvaluationService;
     @Autowired
     private SysPermissionService sysPermissionService;
+    @Autowired
+    private SysUserService sysUserService;
     @Autowired
     private AIService aiService;
 
@@ -52,12 +60,15 @@ public class WorkOrderController {
         boolean canViewAll = sysPermissionService.hasPermission(role, "scope.workorder.all", Constants.Role.ADMIN.equals(role));
 
         if (canViewAll) {
-            return Result.success(workOrderService.pageQueryForAdmin(
-                    pageNum, pageSize, title, orderType, status, assigneeId, isOvertime, deadlineStart, deadlineEnd));
+            var page = workOrderService.pageQueryForAdmin(
+                    pageNum, pageSize, title, orderType, status, assigneeId, isOvertime, deadlineStart, deadlineEnd);
+            fillAssigneeNames(page.getRecords());
+            return Result.success(page);
         } else {
             var page = workOrderService.pageQuery(
                     pageNum, pageSize, title, orderType, status, userId, assigneeId, isOvertime, deadlineStart, deadlineEnd);
             serviceEvaluationService.markEvaluatedFlag(page.getRecords(), userId);
+            fillAssigneeNames(page.getRecords());
             return Result.success(page);
         }
     }
@@ -77,6 +88,7 @@ public class WorkOrderController {
             return Result.error("无权限查看该工单");
         }
 
+        fillAssigneeNames(List.of(workOrder));
         return Result.success(workOrder);
     }
 
@@ -237,5 +249,29 @@ public class WorkOrderController {
 
         workOrderService.removeById(id);
         return Result.success();
+    }
+
+    private void fillAssigneeNames(List<WorkOrder> workOrders) {
+        if (workOrders == null || workOrders.isEmpty()) {
+            return;
+        }
+
+        List<Long> assigneeIds = workOrders.stream()
+                .map(WorkOrder::getAssigneeId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (assigneeIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, String> assigneeMap = sysUserService.listByIds(assigneeIds).stream()
+                .collect(Collectors.toMap(
+                        SysUser::getId,
+                        item -> item.getRealName() != null && !item.getRealName().isBlank() ? item.getRealName() : item.getUsername(),
+                        (left, right) -> left
+                ));
+
+        workOrders.forEach(item -> item.setAssigneeName(assigneeMap.get(item.getAssigneeId())));
     }
 }

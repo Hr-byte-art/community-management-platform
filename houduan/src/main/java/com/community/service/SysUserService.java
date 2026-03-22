@@ -5,13 +5,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.community.entity.SysUser;
 import com.community.mapper.SysUserMapper;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import cn.hutool.core.util.StrUtil;
 @Service
 public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
     
-    @Cacheable(value = "sysUser", key = "#username")
     public SysUser findByUsername(String username) {
         return getOne(new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username));
     }
@@ -36,7 +34,6 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> {
         return count(wrapper) > 0;
     }
     
-    @Cacheable(value = "sysUser", key = "#id")
     public SysUser getUserById(Long id) {
         return super.getById(id);
     }

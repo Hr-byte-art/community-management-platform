@@ -234,25 +234,26 @@ npm run dev
 <a id="database"></a>
 ## 数据库脚本
 
-推荐按以下顺序执行脚本：
+推荐直接执行总脚本：
 
-1. `houduan/src/main/resources/sql/init.sql`
-2. `houduan/src/main/resources/sql/sprint1_message.sql`
-3. `houduan/src/main/resources/sql/sprint1_points.sql`
-4. `houduan/src/main/resources/sql/sprint2_workorder_overtime.sql`
-5. `houduan/src/main/resources/sql/sprint3_p1_evaluation_dispatch.sql`
-6. `houduan/src/main/resources/sql/indexes.sql`
+1. `houduan/src/main/resources/sql/community_service.sql`
 
-对应能力如下：
+如果你需要了解历史增量来源，可参考以下脚本：
 
 | 脚本 | 作用 |
 | --- | --- |
+| `community_service.sql` | 当前项目总脚本，已整合表结构、演示数据、索引、RBAC 初始化数据 |
 | `init.sql` | 初始化基础表结构与演示数据 |
 | `sprint1_message.sql` | 新增消息中心相关表 |
 | `sprint1_points.sql` | 新增积分账户与积分流水 |
 | `sprint2_workorder_overtime.sql` | 增加工单超时治理字段与索引 |
 | `sprint3_p1_evaluation_dispatch.sql` | 增加服务评价与自动派单规则 |
+| `sprint4_p2_rbac_init.sql` | 初始化菜单、按钮、数据范围权限点与角色权限 |
 | `indexes.sql` | 补充索引优化 |
+
+说明：
+- 直接执行 `community_service.sql` 后，不需要再重复执行上述增量脚本
+- 若你只执行 `init.sql`，则还需要再补执行后续 Sprint 脚本
 
 <a id="accounts"></a>
 ## 默认账号

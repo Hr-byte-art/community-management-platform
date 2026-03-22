@@ -60,7 +60,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="assigneeId" label="责任人" width="140">
-          <template #default="{ row }">{{ formatAssignee(row.assigneeId) }}</template>
+          <template #default="{ row }">{{ row.assigneeName || formatAssignee(row.assigneeId) }}</template>
         </el-table-column>
         <el-table-column prop="deadline" label="截止时间" width="180" />
         <el-table-column label="超时" width="80">
