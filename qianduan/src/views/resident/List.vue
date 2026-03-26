@@ -31,8 +31,16 @@
             <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '在住' : '已迁出' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
+            <el-button
+              v-if="userStore.hasAnyPerm(['btn.resident.family.add', 'btn.resident.family.delete'])"
+              link
+              type="success"
+              @click="openFamilyDialog(row)"
+            >
+              家庭关系
+            </el-button>
             <el-button v-if="userStore.hasPerm('btn.resident.edit')" link type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button v-if="userStore.hasPerm('btn.resident.delete')" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -60,6 +68,9 @@
           <el-col :span="12"><el-form-item label="居住类型"><el-select v-model="form.residenceType"><el-option label="自有" value="OWN" /><el-option label="租住" value="RENT" /></el-select></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="状态"><el-select v-model="form.status"><el-option label="在住" :value="1" /><el-option label="已迁出" :value="0" /></el-select></el-form-item></el-col>
         </el-row>
+        <el-form-item label="居民照片">
+          <ImageUploadField v-model="form.photo" />
+        </el-form-item>
         <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" /></el-form-item>
       </el-form>
       <template #footer>
@@ -67,15 +78,69 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="familyDialogVisible" :title="`家庭关系 - ${currentResident?.name || ''}`" width="760px">
+      <el-form :inline="true" :model="familyForm">
+        <el-form-item label="关联居民">
+          <el-select v-model="familyForm.relatedResidentId" filterable style="width: 220px">
+            <el-option
+              v-for="item in familyResidentOptions"
+              :key="item.id"
+              :label="`${item.name}（${item.idCard || item.id}）`"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="关系">
+          <el-select v-model="familyForm.relation" style="width: 160px">
+            <el-option label="配偶" value="SPOUSE" />
+            <el-option label="父母" value="PARENT" />
+            <el-option label="子女" value="CHILD" />
+            <el-option label="兄弟姐妹" value="SIBLING" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button v-if="userStore.hasPerm('btn.resident.family.add')" type="primary" @click="handleAddFamily">添加关系</el-button>
+        </el-form-item>
+      </el-form>
+
+      <el-table :data="familyTable" v-loading="familyLoading" stripe>
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="关联居民" min-width="200">
+          <template #default="{ row }">{{ formatResidentName(row.relatedResidentId) }}</template>
+        </el-table-column>
+        <el-table-column label="关系" width="120">
+          <template #default="{ row }">{{ relationMap[row.relation] || row.relation || '-' }}</template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="userStore.hasPerm('btn.resident.family.delete')"
+              link
+              type="danger"
+              @click="handleDeleteFamily(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #footer>
+        <el-button @click="familyDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { residentApi, exportApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import { idCardRule, phoneRule } from '../../utils/validation'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const userStore = useUserStore()
 const query = ref({ pageNum: 1, pageSize: 10, name: '', buildingNo: '', status: null })
@@ -85,6 +150,23 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const form = ref({})
 const formRef = ref()
+const familyDialogVisible = ref(false)
+const familyLoading = ref(false)
+const familyTable = ref([])
+const currentResident = ref(null)
+const residentOptions = ref([])
+const familyForm = ref({ relatedResidentId: null, relation: 'SPOUSE' })
+
+const relationMap = {
+  SPOUSE: '配偶',
+  PARENT: '父母',
+  CHILD: '子女',
+  SIBLING: '兄弟姐妹'
+}
+
+const familyResidentOptions = computed(() => {
+  return residentOptions.value.filter((item) => item.id !== currentResident.value?.id)
+})
 
 // 表单验证规则
 const formRules = {
@@ -101,6 +183,11 @@ const loadData = async () => {
   tableData.value = res.data.records
   total.value = res.data.total
   loading.value = false
+}
+
+const loadResidentOptions = async () => {
+  const res = await residentApi.list({ pageNum: 1, pageSize: 500 })
+  residentOptions.value = res?.data?.records || []
 }
 
 const handleAdd = () => {
@@ -149,6 +236,53 @@ const handleExport = () => {
   const link = document.createElement('a')
   link.href = exportApi.resident() + '?token=' + userStore.token
   link.click()
+}
+
+const formatResidentName = (residentId) => {
+  const resident = residentOptions.value.find((item) => item.id === residentId)
+  return resident ? `${resident.name}${resident.idCard ? `（${resident.idCard}）` : ''}` : `居民${residentId}`
+}
+
+const loadFamilyRelations = async () => {
+  if (!currentResident.value?.id) return
+  familyLoading.value = true
+  try {
+    const res = await residentApi.getFamily(currentResident.value.id)
+    familyTable.value = res?.data || []
+  } finally {
+    familyLoading.value = false
+  }
+}
+
+const openFamilyDialog = async (row) => {
+  currentResident.value = row
+  familyForm.value = { relatedResidentId: null, relation: 'SPOUSE' }
+  familyDialogVisible.value = true
+  await Promise.all([loadResidentOptions(), loadFamilyRelations()])
+}
+
+const handleAddFamily = async () => {
+  if (!currentResident.value?.id) return
+  if (!familyForm.value.relatedResidentId) {
+    ElMessage.warning('请选择关联居民')
+    return
+  }
+  await residentApi.addFamily({
+    residentId: currentResident.value.id,
+    relatedResidentId: familyForm.value.relatedResidentId,
+    relation: familyForm.value.relation
+  })
+  ElMessage.success('添加成功')
+  familyForm.value = { relatedResidentId: null, relation: 'SPOUSE' }
+  await loadFamilyRelations()
+}
+
+const handleDeleteFamily = (row) => {
+  ElMessageBox.confirm('确定删除该家庭关系吗？', '提示', { type: 'warning' }).then(async () => {
+    await residentApi.delFamily(row.id)
+    ElMessage.success('删除成功')
+    await loadFamilyRelations()
+  })
 }
 
 const handleReset = () => {

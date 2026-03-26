@@ -1,5 +1,6 @@
 package com.community.controller;
 
+import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Constants;
 import com.community.common.Result;
@@ -134,6 +135,7 @@ public class ActivityRegistrationController {
         return Result.success(registrationService.pageByUserId(userId, pageNum, pageSize));
     }
 
+    @Auth(value = "ADMIN")
     @GetMapping("/activity/{activityId}")
     public Result<?> getActivityRegistrations(@PathVariable Long activityId,
                                               @RequestParam(defaultValue = "1") Integer pageNum,

@@ -75,6 +75,9 @@
           </el-col>
         </el-row>
         <el-form-item label="联系方式" prop="contactInfo"><el-input v-model="form.contactInfo" :disabled="isView" /></el-form-item>
+        <el-form-item label="相关图片">
+          <ImageUploadField v-model="form.images" :disabled="isView" :multiple="true" :limit="6" />
+        </el-form-item>
         <el-form-item label="内容" prop="content"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
         <el-form-item label="AI辅助" v-if="!isView">
           <div style="width: 100%">
@@ -103,6 +106,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { neighborHelpApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import { contactRule } from '../../utils/validation'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const userStore = useUserStore()
 const typeMap = { SEEK: '求助', OFFER: '提供帮助' }

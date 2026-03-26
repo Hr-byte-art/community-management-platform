@@ -113,6 +113,9 @@
             :disabled="isView"
           />
         </el-form-item>
+        <el-form-item label="现场图片">
+          <ImageUploadField v-model="form.images" :disabled="isView" :multiple="true" :limit="6" />
+        </el-form-item>
         <el-form-item label="内容"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
         <el-form-item label="AI辅助" v-if="!isView && !isHandle">
           <div style="width: 100%">
@@ -143,6 +146,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { workOrderApi, exportApi, userApi } from '../../api'
 import { useUserStore } from '../../stores/user'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const userStore = useUserStore()
 const typeMap = { REPAIR: '报修', COMPLAINT: '投诉', SUGGESTION: '建议', OTHER: '其他' }

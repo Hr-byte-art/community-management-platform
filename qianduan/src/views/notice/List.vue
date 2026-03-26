@@ -69,6 +69,9 @@
         <el-form-item label="置顶">
           <el-switch v-model="form.isTop" :active-value="1" :inactive-value="0" :disabled="isView" />
         </el-form-item>
+        <el-form-item label="封面图">
+          <ImageUploadField v-model="form.coverImage" :disabled="isView" />
+        </el-form-item>
         <el-form-item label="内容"><el-input v-model="form.content" type="textarea" :rows="6" :disabled="isView" /></el-form-item>
       </el-form>
       <template #footer>
@@ -113,6 +116,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { noticeApi } from '../../api'
 import { useUserStore } from '../../stores/user'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const userStore = useUserStore()
 const typeMap = { NOTICE: '通知', ANNOUNCEMENT: '公告', NEWS: '新闻' }

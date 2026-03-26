@@ -56,6 +56,7 @@
           <el-col :span="12"><el-form-item label="预计离开"><el-date-picker v-model="form.expectedLeaveDate" type="date" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="状态"><el-select v-model="form.status"><el-option label="在住" :value="1" /><el-option label="已离开" :value="0" /></el-select></el-form-item>
+        <el-form-item label="人员照片"><ImageUploadField v-model="form.photo" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" /></el-form-item>
       </el-form>
       <template #footer>
@@ -72,6 +73,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { floatingApi, exportApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import { idCardRule, phoneRule } from '../../utils/validation'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const userStore = useUserStore()
 const query = ref({ pageNum: 1, pageSize: 10, name: '', status: null })

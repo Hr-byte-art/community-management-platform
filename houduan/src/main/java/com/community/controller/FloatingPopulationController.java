@@ -16,6 +16,7 @@ public class FloatingPopulationController {
     @Autowired
     private FloatingPopulationService floatingPopulationService;
 
+    @Auth(permissions = {"menu.floating"})
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
                           @RequestParam(defaultValue = "10") Integer pageSize,
@@ -23,6 +24,7 @@ public class FloatingPopulationController {
         return Result.success(floatingPopulationService.pageQuery(pageNum, pageSize, name, status));
     }
 
+    @Auth(permissions = {"menu.floating"})
     @GetMapping("/{id}")
     public Result<?> getById(@PathVariable Long id) {
         return Result.success(floatingPopulationService.getById(id));

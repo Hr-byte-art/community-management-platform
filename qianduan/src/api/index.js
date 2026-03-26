@@ -34,6 +34,14 @@ export const activityApi = {
   del: (id) => request.delete(`/activity/${id}`)
 }
 
+export const activityRegistrationApi = {
+  add: (data) => request.post('/registration', data),
+  del: (id) => request.delete(`/registration/${id}`),
+  checkin: (id) => request.put(`/registration/checkin/${id}`),
+  my: (params) => request.get('/registration/my', { params }),
+  byActivity: (activityId, params) => request.get(`/registration/activity/${activityId}`, { params })
+}
+
 export const workOrderApi = {
   list: (params) => request.get('/workorder/list', { params }),
   get: (id) => request.get(`/workorder/${id}`),

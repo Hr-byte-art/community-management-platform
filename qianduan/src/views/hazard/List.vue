@@ -59,6 +59,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="隐患位置"><el-input v-model="form.location" :disabled="isView" /></el-form-item>
+        <el-form-item label="现场图片">
+          <ImageUploadField v-model="form.images" :disabled="isView" :multiple="true" :limit="6" />
+        </el-form-item>
         <el-form-item label="隐患描述"><el-input v-model="form.content" type="textarea" :rows="4" :disabled="isView" /></el-form-item>
         <el-form-item label="AI辅助" v-if="!isView && !isHandle">
           <div style="width: 100%">
@@ -89,6 +92,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { hazardApi } from '../../api'
 import { useUserStore } from '../../stores/user'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const userStore = useUserStore()
 const typeMap = { FIRE: '消防', THEFT: '盗窃', TRAFFIC: '交通', OTHER: '其他' }

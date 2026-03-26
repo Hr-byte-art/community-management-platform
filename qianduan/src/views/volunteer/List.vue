@@ -43,6 +43,7 @@
         <el-form-item label="姓名" prop="name"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="联系电话" prop="phone"><el-input v-model="form.phone" /></el-form-item>
         <el-form-item label="技能特长" prop="skills"><el-input v-model="form.skills" type="textarea" /></el-form-item>
+        <el-form-item label="个人照片"><ImageUploadField v-model="form.photo" /></el-form-item>
         <el-form-item label="服务时长" v-if="form.id"><el-input-number v-model="form.serviceHours" :min="0" :precision="1" /></el-form-item>
         <el-form-item label="状态" v-if="form.id">
           <el-select v-model="form.status">
@@ -64,6 +65,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { volunteerApi } from '../../api'
 import { useUserStore } from '../../stores/user'
 import { phoneRule } from '../../utils/validation'
+import ImageUploadField from '../../components/ImageUploadField.vue'
 
 const userStore = useUserStore()
 const statusMap = { 0: '待审核', 1: '已通过', 2: '已拒绝' }

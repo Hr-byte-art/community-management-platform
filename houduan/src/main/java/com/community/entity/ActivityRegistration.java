@@ -1,6 +1,8 @@
 package com.community.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -14,8 +16,4 @@ public class ActivityRegistration {
     private Integer status; // 0-已报名，1-已签到，2-已取消
     private LocalDateTime registerTime;
     private LocalDateTime checkInTime;
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
 }

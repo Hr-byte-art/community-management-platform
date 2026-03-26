@@ -20,6 +20,7 @@ public class ResidentController {
     @Autowired
     private FamilyRelationService familyRelationService;
 
+    @Auth(permissions = {"menu.resident"})
     @GetMapping("/list")
     public Result<?> list(@RequestParam(defaultValue = "1") Integer pageNum,
                           @RequestParam(defaultValue = "10") Integer pageSize,
@@ -27,6 +28,7 @@ public class ResidentController {
         return Result.success(residentService.pageQuery(pageNum, pageSize, name, buildingNo, status));
     }
 
+    @Auth(permissions = {"menu.resident"})
     @GetMapping("/{id}")
     public Result<?> getById(@PathVariable Long id) {
         return Result.success(residentService.getById(id));
@@ -89,6 +91,7 @@ public class ResidentController {
         return Result.success();
     }
 
+    @Auth(permissions = {"menu.resident"})
     @GetMapping("/{id}/family")
     public Result<?> getFamilyRelations(@PathVariable Long id) {
         List<FamilyRelation> relations = familyRelationService.findByResidentId(id);
