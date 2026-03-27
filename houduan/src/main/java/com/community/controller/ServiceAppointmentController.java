@@ -10,12 +10,17 @@ import com.community.entity.ServiceAppointment;
 import com.community.service.ServiceAppointmentService;
 import com.community.service.SysPermissionService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/appointment")
 public class ServiceAppointmentController {
+    private static final Logger logger = LoggerFactory.getLogger(ServiceAppointmentController.class);
+    private static final String AI_TRACE_ID_HEADER = "X-AI-Trace-Id";
+
     @Autowired
     private ServiceAppointmentService appointmentService;
     @Autowired
@@ -46,33 +51,55 @@ public class ServiceAppointmentController {
     public Result<?> getById(@PathVariable Long id, HttpServletRequest request) {
         ServiceAppointment appointment = appointmentService.getById(id);
         if (appointment == null) {
-            return Result.error("预约不存在");
+            return Result.error("\u9884\u7ea6\u4e0d\u5b58\u5728");
         }
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
         boolean canViewAll = sysPermissionService.hasPermission(role, "scope.appointment.all", "ADMIN".equals(role));
         if (!canViewAll && !appointment.getUserId().equals(userId)) {
-            return Result.error("无权限查看该预约");
+            return Result.error("\u65e0\u6743\u9650\u67e5\u770b\u8be5\u9884\u7ea6");
         }
         return Result.success(appointment);
     }
 
     @Auth(value = "", permissions = {"btn.appointment.add", "btn.appointment.edit"}, requireAllPermissions = false)
     @PostMapping("/ai/complete")
-    public Result<?> enhance(@RequestBody ServiceAppointmentEnhanceRequest request) {
-        if (request == null || StrUtil.isAllBlank(request.getTitle(), request.getContent())) {
-            return Result.error(400, "请先输入预约标题或预约内容");
+    public Result<?> enhance(@RequestBody ServiceAppointmentEnhanceRequest enhanceRequest, HttpServletRequest httpRequest) {
+        String traceId = StrUtil.blankToDefault(httpRequest.getHeader(AI_TRACE_ID_HEADER), "unknown");
+        long startTime = System.currentTimeMillis();
+        if (enhanceRequest == null || StrUtil.isAllBlank(enhanceRequest.getTitle(), enhanceRequest.getContent())) {
+            logger.warn("[ai-complete][backend] traceId={} stage=controller-exit scene=appointment costMs={} success=false reason=empty_input",
+                    traceId,
+                    System.currentTimeMillis() - startTime);
+            return Result.error(400, "\u8bf7\u5148\u8f93\u5165\u9884\u7ea6\u6807\u9898\u6216\u9884\u7ea6\u5185\u5bb9");
         }
+        logger.info("[ai-complete][backend] traceId={} stage=controller-enter scene=appointment uri={} titleChars={} contentChars={}",
+                traceId,
+                httpRequest.getRequestURI(),
+                enhanceRequest.getTitle() == null ? 0 : enhanceRequest.getTitle().length(),
+                enhanceRequest.getContent() == null ? 0 : enhanceRequest.getContent().length());
         try {
-            return Result.success(aiService.enhanceServiceAppointment(request));
+            Result<?> result = Result.success(aiService.enhanceServiceAppointment(enhanceRequest));
+            logger.info("[ai-complete][backend] traceId={} stage=controller-exit scene=appointment costMs={} success=true",
+                    traceId,
+                    System.currentTimeMillis() - startTime);
+            return result;
         } catch (IllegalStateException e) {
+            logger.warn("[ai-complete][backend] traceId={} stage=controller-exit scene=appointment costMs={} success=false message={}",
+                    traceId,
+                    System.currentTimeMillis() - startTime,
+                    e.getMessage());
             return Result.error(e.getMessage());
         } catch (Exception e) {
-            return Result.error("AI 完善预约信息失败，请稍后重试");
+            logger.error("[ai-complete][backend] traceId={} stage=controller-exit scene=appointment costMs={} success=false",
+                    traceId,
+                    System.currentTimeMillis() - startTime,
+                    e);
+            return Result.error("AI \u5b8c\u5584\u9884\u7ea6\u4fe1\u606f\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5");
         }
     }
 
-    @Log("预约生活服务")
+    @Log("appointment_add")
     @Auth(value = "", permissions = {"btn.appointment.add"})
     @PostMapping
     public Result<?> add(@RequestBody ServiceAppointment appointment, HttpServletRequest request) {
@@ -83,19 +110,19 @@ public class ServiceAppointmentController {
         return Result.success();
     }
 
-    @Log("编辑预约")
+    @Log("appointment_update")
     @Auth(value = "", permissions = {"btn.appointment.edit"})
     @PutMapping("/{id}")
     public Result<?> update(@PathVariable Long id, @RequestBody ServiceAppointment appointment, HttpServletRequest request) {
         ServiceAppointment existing = appointmentService.getById(id);
         if (existing == null) {
-            return Result.error("预约不存在");
+            return Result.error("\u9884\u7ea6\u4e0d\u5b58\u5728");
         }
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
         boolean canViewAll = sysPermissionService.hasPermission(role, "scope.appointment.all", "ADMIN".equals(role));
         if (!canViewAll && !existing.getUserId().equals(userId)) {
-            return Result.error("无权限编辑该预约");
+            return Result.error("\u65e0\u6743\u9650\u7f16\u8f91\u8be5\u9884\u7ea6");
         }
         appointment.setId(id);
         appointment.setUserId(existing.getUserId());
@@ -103,41 +130,40 @@ public class ServiceAppointmentController {
         return Result.success();
     }
 
-    @Log("更新预约状态")
+    @Log("appointment_status")
     @Auth(value = "", permissions = {"btn.appointment.status.confirm", "btn.appointment.status.complete", "btn.appointment.status.cancel"}, requireAllPermissions = false)
     @PutMapping("/{id}/status")
     public Result<?> updateStatus(@PathVariable Long id, @RequestParam Integer status, HttpServletRequest request) {
         ServiceAppointment appointment = appointmentService.getById(id);
         if (appointment == null) {
-            return Result.error("预约不存在");
+            return Result.error("\u9884\u7ea6\u4e0d\u5b58\u5728");
         }
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
         boolean canViewAll = sysPermissionService.hasPermission(role, "scope.appointment.all", "ADMIN".equals(role));
         if (!canViewAll && !appointment.getUserId().equals(userId)) {
-            return Result.error("无权限更新该预约状态");
+            return Result.error("\u65e0\u6743\u9650\u66f4\u65b0\u8be5\u9884\u7ea6\u72b6\u6001");
         }
         appointment.setStatus(status);
         appointmentService.updateById(appointment);
         return Result.success();
     }
 
-    @Log("删除预约")
+    @Log("appointment_delete")
     @Auth(value = "", permissions = {"btn.appointment.delete"})
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id, HttpServletRequest request) {
         ServiceAppointment appointment = appointmentService.getById(id);
         if (appointment == null) {
-            return Result.error("预约不存在");
+            return Result.error("\u9884\u7ea6\u4e0d\u5b58\u5728");
         }
         Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
         boolean canViewAll = sysPermissionService.hasPermission(role, "scope.appointment.all", "ADMIN".equals(role));
         if (!canViewAll && !appointment.getUserId().equals(userId)) {
-            return Result.error("无权限删除该预约");
+            return Result.error("\u65e0\u6743\u9650\u5220\u9664\u8be5\u9884\u7ea6");
         }
-        appointmentService.removeById(id);
+        appointmentService.removeById(appointment.getId());
         return Result.success();
     }
 }
-

@@ -95,6 +95,7 @@
         <router-view :key="route.fullPath" />
       </el-main>
     </el-container>
+    <AIFloatingChat />
   </el-container>
 </template>
 
@@ -102,6 +103,7 @@
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
+import AIFloatingChat from '../components/AIFloatingChat.vue'
 
 const route = useRoute()
 const router = useRouter()

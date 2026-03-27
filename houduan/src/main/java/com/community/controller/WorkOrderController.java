@@ -7,6 +7,7 @@ import com.community.ai.dto.WorkOrderEnhanceRequest;
 import com.community.ai.service.AIService;
 import com.community.common.Constants;
 import com.community.common.Result;
+import com.community.entity.SysUser;
 import com.community.entity.WorkOrder;
 import com.community.service.GridDispatchRuleService;
 import com.community.service.MessageNoticeService;
@@ -14,8 +15,9 @@ import com.community.service.ServiceEvaluationService;
 import com.community.service.SysPermissionService;
 import com.community.service.SysUserService;
 import com.community.service.WorkOrderService;
-import com.community.entity.SysUser;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,9 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/workorder")
 public class WorkOrderController {
+    private static final Logger logger = LoggerFactory.getLogger(WorkOrderController.class);
+    private static final String AI_TRACE_ID_HEADER = "X-AI-Trace-Id";
+
     @Autowired
     private WorkOrderService workOrderService;
     @Autowired
@@ -81,11 +86,11 @@ public class WorkOrderController {
 
         WorkOrder workOrder = workOrderService.getById(id);
         if (workOrder == null) {
-            return Result.error("工单不存在");
+            return Result.error("\u5de5\u5355\u4e0d\u5b58\u5728");
         }
 
         if (!canViewAll && !workOrder.getSubmitterId().equals(userId)) {
-            return Result.error("无权限查看该工单");
+            return Result.error("\u65e0\u6743\u9650\u67e5\u770b\u8be5\u5de5\u5355");
         }
 
         fillAssigneeNames(List.of(workOrder));
@@ -94,16 +99,38 @@ public class WorkOrderController {
 
     @Auth(value = "", permissions = {"btn.workorder.add", "btn.workorder.edit"}, requireAllPermissions = false)
     @PostMapping("/ai/complete")
-    public Result<?> enhance(@RequestBody WorkOrderEnhanceRequest request) {
-        if (request == null || StrUtil.isAllBlank(request.getTitle(), request.getContent())) {
-            return Result.error(400, "请先输入工单标题或问题描述");
+    public Result<?> enhance(@RequestBody WorkOrderEnhanceRequest enhanceRequest, HttpServletRequest httpRequest) {
+        String traceId = StrUtil.blankToDefault(httpRequest.getHeader(AI_TRACE_ID_HEADER), "unknown");
+        long startTime = System.currentTimeMillis();
+        if (enhanceRequest == null || StrUtil.isAllBlank(enhanceRequest.getTitle(), enhanceRequest.getContent())) {
+            logger.warn("[ai-complete][backend] traceId={} stage=controller-exit scene=workorder costMs={} success=false reason=empty_input",
+                    traceId,
+                    System.currentTimeMillis() - startTime);
+            return Result.error(400, "\u8bf7\u5148\u8f93\u5165\u5de5\u5355\u6807\u9898\u6216\u95ee\u9898\u63cf\u8ff0");
         }
+        logger.info("[ai-complete][backend] traceId={} stage=controller-enter scene=workorder uri={} titleChars={} contentChars={}",
+                traceId,
+                httpRequest.getRequestURI(),
+                enhanceRequest.getTitle() == null ? 0 : enhanceRequest.getTitle().length(),
+                enhanceRequest.getContent() == null ? 0 : enhanceRequest.getContent().length());
         try {
-            return Result.success(aiService.enhanceWorkOrder(request));
+            Result<?> result = Result.success(aiService.enhanceWorkOrder(enhanceRequest));
+            logger.info("[ai-complete][backend] traceId={} stage=controller-exit scene=workorder costMs={} success=true",
+                    traceId,
+                    System.currentTimeMillis() - startTime);
+            return result;
         } catch (IllegalStateException e) {
+            logger.warn("[ai-complete][backend] traceId={} stage=controller-exit scene=workorder costMs={} success=false message={}",
+                    traceId,
+                    System.currentTimeMillis() - startTime,
+                    e.getMessage());
             return Result.error(e.getMessage());
         } catch (Exception e) {
-            return Result.error("AI 完善工单信息失败，请稍后重试");
+            logger.error("[ai-complete][backend] traceId={} stage=controller-exit scene=workorder costMs={} success=false",
+                    traceId,
+                    System.currentTimeMillis() - startTime,
+                    e);
+            return Result.error("AI \u5b8c\u5584\u5de5\u5355\u4fe1\u606f\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5");
         }
     }
 
@@ -130,8 +157,8 @@ public class WorkOrderController {
         if (workOrder.getAssigneeId() != null) {
             messageNoticeService.sendMessage(
                     workOrder.getAssigneeId(),
-                    "有新的工单待处理",
-                    "系统已为您自动派单：[" + workOrder.getTitle() + "]，请及时处理。",
+                    "\u6709\u65b0\u7684\u5de5\u5355\u5f85\u5904\u7406",
+                    "\u7cfb\u7edf\u5df2\u4e3a\u60a8\u81ea\u52a8\u6d3e\u5355\uff1a[" + workOrder.getTitle() + "]\uff0c\u8bf7\u53ca\u65f6\u5904\u7406\u3002",
                     Constants.MessageType.SYSTEM,
                     Constants.MessageBusinessType.WORK_ORDER,
                     workOrder.getId()
@@ -151,11 +178,11 @@ public class WorkOrderController {
 
         WorkOrder existingOrder = workOrderService.getById(id);
         if (existingOrder == null) {
-            return Result.error("工单不存在");
+            return Result.error("\u5de5\u5355\u4e0d\u5b58\u5728");
         }
 
         if (!existingOrder.getSubmitterId().equals(userId) && !canViewAll) {
-            return Result.error("无权限更新该工单");
+            return Result.error("\u65e0\u6743\u9650\u66f4\u65b0\u8be5\u5de5\u5355");
         }
 
         workOrder.setId(id);
@@ -184,12 +211,12 @@ public class WorkOrderController {
         boolean canViewAll = sysPermissionService.hasPermission(role, "scope.workorder.all", Constants.Role.ADMIN.equals(role));
 
         if (!Constants.Role.ADMIN.equals(role)) {
-            return Result.error("无权限处理工单");
+            return Result.error("\u65e0\u6743\u9650\u5904\u7406\u5de5\u5355");
         }
 
         WorkOrder order = workOrderService.getById(id);
         if (order == null) {
-            return Result.error("工单不存在");
+            return Result.error("\u5de5\u5355\u4e0d\u5b58\u5728");
         }
 
         Integer oldStatus = order.getStatus();
@@ -214,8 +241,8 @@ public class WorkOrderController {
                 && Constants.WorkOrderStatus.COMPLETED.equals(order.getStatus())) {
             messageNoticeService.sendMessage(
                     order.getSubmitterId(),
-                    "工单已完成",
-                    "您提交的工单[" + order.getTitle() + "]已处理完成。",
+                    "\u5de5\u5355\u5df2\u5b8c\u6210",
+                    "\u60a8\u63d0\u4ea4\u7684\u5de5\u5355[" + order.getTitle() + "]\u5df2\u5904\u7406\u5b8c\u6210\u3002",
                     Constants.MessageType.WORK_ORDER,
                     Constants.MessageBusinessType.WORK_ORDER,
                     order.getId()
@@ -236,15 +263,15 @@ public class WorkOrderController {
 
         WorkOrder workOrder = workOrderService.getById(id);
         if (workOrder == null) {
-            return Result.error("工单不存在");
+            return Result.error("\u5de5\u5355\u4e0d\u5b58\u5728");
         }
 
         if (!workOrder.getSubmitterId().equals(userId) && !canViewAll) {
-            return Result.error("无权限删除该工单");
+            return Result.error("\u65e0\u6743\u9650\u5220\u9664\u8be5\u5de5\u5355");
         }
 
         if (!Constants.WorkOrderStatus.PENDING.equals(workOrder.getStatus())) {
-            return Result.error("已处理工单不可删除");
+            return Result.error("\u5df2\u5904\u7406\u5de5\u5355\u4e0d\u53ef\u5220\u9664");
         }
 
         workOrderService.removeById(id);

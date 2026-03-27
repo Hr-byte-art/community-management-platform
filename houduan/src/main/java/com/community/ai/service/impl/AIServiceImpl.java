@@ -10,15 +10,19 @@ import com.community.ai.dto.ServiceAppointmentEnhanceResponse;
 import com.community.ai.dto.WorkOrderEnhanceRequest;
 import com.community.ai.dto.WorkOrderEnhanceResponse;
 import com.community.ai.service.AIService;
+import com.community.ai.util.AITraceUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +32,7 @@ import java.util.Set;
 
 @Service
 public class AIServiceImpl implements AIService {
+    private static final Logger logger = LoggerFactory.getLogger(AIServiceImpl.class);
 
     private static final Set<String> WORK_ORDER_TYPES = Set.of("REPAIR", "COMPLAINT", "SUGGESTION", "OTHER");
     private static final Set<String> HAZARD_TYPES = Set.of("FIRE", "THEFT", "TRAFFIC", "OTHER");
@@ -56,11 +61,15 @@ public class AIServiceImpl implements AIService {
     @Value("classpath:/prompt/StructuredAppointmentEnhancePrompt.st")
     private org.springframework.core.io.Resource structuredAppointmentPromptResource;
 
+    @Value("classpath:/prompt/AIChatSystemPrompt.st")
+    private org.springframework.core.io.Resource aiChatSystemPromptResource;
+
     private String workOrderTextPrompt;
     private String structuredWorkOrderPrompt;
     private String structuredHazardPrompt;
     private String structuredNeighborHelpPrompt;
     private String structuredAppointmentPrompt;
+    private String aiChatSystemPrompt;
 
     @PostConstruct
     public void init() {
@@ -69,58 +78,171 @@ public class AIServiceImpl implements AIService {
         structuredHazardPrompt = readPrompt(structuredHazardPromptResource);
         structuredNeighborHelpPrompt = readPrompt(structuredNeighborHelpPromptResource);
         structuredAppointmentPrompt = readPrompt(structuredAppointmentPromptResource);
+        aiChatSystemPrompt = readPrompt(aiChatSystemPromptResource);
     }
 
     @Override
     public String getAnswers(String question) {
-        return callModel(workOrderTextPrompt, question);
+        return callModel("qa", workOrderTextPrompt, question);
     }
 
     @Override
     public WorkOrderEnhanceResponse enhanceWorkOrder(WorkOrderEnhanceRequest request) {
-        WorkOrderEnhanceRequest safeRequest = normalizeWorkOrderRequest(request);
-        String userPrompt = buildWorkOrderUserPrompt(safeRequest);
-        String content = callModel(structuredWorkOrderPrompt, userPrompt);
-        WorkOrderEnhanceResponse response = parseModelResponse(content, WorkOrderEnhanceResponse.class);
-        return sanitizeWorkOrderResponse(response, safeRequest);
+        String traceId = AITraceUtil.currentTraceId();
+        long serviceStartTime = System.currentTimeMillis();
+        try {
+            WorkOrderEnhanceRequest safeRequest = normalizeWorkOrderRequest(request);
+            String userPrompt = buildWorkOrderUserPrompt(safeRequest);
+            String content = callModel("workorder", structuredWorkOrderPrompt, userPrompt);
+            long parseStartTime = System.currentTimeMillis();
+            WorkOrderEnhanceResponse response = parseModelResponse(content, WorkOrderEnhanceResponse.class);
+            long parseCostMs = System.currentTimeMillis() - parseStartTime;
+            long sanitizeStartTime = System.currentTimeMillis();
+            WorkOrderEnhanceResponse sanitized = sanitizeWorkOrderResponse(response, safeRequest);
+            long sanitizeCostMs = System.currentTimeMillis() - sanitizeStartTime;
+            logger.info("[ai-complete][backend] traceId={} stage=service scene=workorder totalCostMs={} parseCostMs={} sanitizeCostMs={} success=true",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    parseCostMs,
+                    sanitizeCostMs);
+            return sanitized;
+        } catch (RuntimeException e) {
+            logger.warn("[ai-complete][backend] traceId={} stage=service scene=workorder totalCostMs={} success=false message={}",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public SecurityHazardEnhanceResponse enhanceSecurityHazard(SecurityHazardEnhanceRequest request) {
-        SecurityHazardEnhanceRequest safeRequest = normalizeSecurityHazardRequest(request);
-        String userPrompt = buildSecurityHazardUserPrompt(safeRequest);
-        String content = callModel(structuredHazardPrompt, userPrompt);
-        SecurityHazardEnhanceResponse response = parseModelResponse(content, SecurityHazardEnhanceResponse.class);
-        return sanitizeSecurityHazardResponse(response, safeRequest);
+        String traceId = AITraceUtil.currentTraceId();
+        long serviceStartTime = System.currentTimeMillis();
+        try {
+            SecurityHazardEnhanceRequest safeRequest = normalizeSecurityHazardRequest(request);
+            String userPrompt = buildSecurityHazardUserPrompt(safeRequest);
+            String content = callModel("hazard", structuredHazardPrompt, userPrompt);
+            long parseStartTime = System.currentTimeMillis();
+            SecurityHazardEnhanceResponse response = parseModelResponse(content, SecurityHazardEnhanceResponse.class);
+            long parseCostMs = System.currentTimeMillis() - parseStartTime;
+            long sanitizeStartTime = System.currentTimeMillis();
+            SecurityHazardEnhanceResponse sanitized = sanitizeSecurityHazardResponse(response, safeRequest);
+            long sanitizeCostMs = System.currentTimeMillis() - sanitizeStartTime;
+            logger.info("[ai-complete][backend] traceId={} stage=service scene=hazard totalCostMs={} parseCostMs={} sanitizeCostMs={} success=true",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    parseCostMs,
+                    sanitizeCostMs);
+            return sanitized;
+        } catch (RuntimeException e) {
+            logger.warn("[ai-complete][backend] traceId={} stage=service scene=hazard totalCostMs={} success=false message={}",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public NeighborHelpEnhanceResponse enhanceNeighborHelp(NeighborHelpEnhanceRequest request) {
-        NeighborHelpEnhanceRequest safeRequest = normalizeNeighborHelpRequest(request);
-        String userPrompt = buildNeighborHelpUserPrompt(safeRequest);
-        String content = callModel(structuredNeighborHelpPrompt, userPrompt);
-        NeighborHelpEnhanceResponse response = parseModelResponse(content, NeighborHelpEnhanceResponse.class);
-        return sanitizeNeighborHelpResponse(response, safeRequest);
+        String traceId = AITraceUtil.currentTraceId();
+        long serviceStartTime = System.currentTimeMillis();
+        try {
+            NeighborHelpEnhanceRequest safeRequest = normalizeNeighborHelpRequest(request);
+            String userPrompt = buildNeighborHelpUserPrompt(safeRequest);
+            String content = callModel("neighborhelp", structuredNeighborHelpPrompt, userPrompt);
+            long parseStartTime = System.currentTimeMillis();
+            NeighborHelpEnhanceResponse response = parseModelResponse(content, NeighborHelpEnhanceResponse.class);
+            long parseCostMs = System.currentTimeMillis() - parseStartTime;
+            long sanitizeStartTime = System.currentTimeMillis();
+            NeighborHelpEnhanceResponse sanitized = sanitizeNeighborHelpResponse(response, safeRequest);
+            long sanitizeCostMs = System.currentTimeMillis() - sanitizeStartTime;
+            logger.info("[ai-complete][backend] traceId={} stage=service scene=neighborhelp totalCostMs={} parseCostMs={} sanitizeCostMs={} success=true",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    parseCostMs,
+                    sanitizeCostMs);
+            return sanitized;
+        } catch (RuntimeException e) {
+            logger.warn("[ai-complete][backend] traceId={} stage=service scene=neighborhelp totalCostMs={} success=false message={}",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public ServiceAppointmentEnhanceResponse enhanceServiceAppointment(ServiceAppointmentEnhanceRequest request) {
-        ServiceAppointmentEnhanceRequest safeRequest = normalizeServiceAppointmentRequest(request);
-        String userPrompt = buildAppointmentUserPrompt(safeRequest);
-        String content = callModel(structuredAppointmentPrompt, userPrompt);
-        ServiceAppointmentEnhanceResponse response = parseModelResponse(content, ServiceAppointmentEnhanceResponse.class);
-        return sanitizeServiceAppointmentResponse(response, safeRequest);
+        String traceId = AITraceUtil.currentTraceId();
+        long serviceStartTime = System.currentTimeMillis();
+        try {
+            ServiceAppointmentEnhanceRequest safeRequest = normalizeServiceAppointmentRequest(request);
+            String userPrompt = buildAppointmentUserPrompt(safeRequest);
+            String content = callModel("appointment", structuredAppointmentPrompt, userPrompt);
+            long parseStartTime = System.currentTimeMillis();
+            ServiceAppointmentEnhanceResponse response = parseModelResponse(content, ServiceAppointmentEnhanceResponse.class);
+            long parseCostMs = System.currentTimeMillis() - parseStartTime;
+            long sanitizeStartTime = System.currentTimeMillis();
+            ServiceAppointmentEnhanceResponse sanitized = sanitizeServiceAppointmentResponse(response, safeRequest);
+            long sanitizeCostMs = System.currentTimeMillis() - sanitizeStartTime;
+            logger.info("[ai-complete][backend] traceId={} stage=service scene=appointment totalCostMs={} parseCostMs={} sanitizeCostMs={} success=true",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    parseCostMs,
+                    sanitizeCostMs);
+            return sanitized;
+        } catch (RuntimeException e) {
+            logger.warn("[ai-complete][backend] traceId={} stage=service scene=appointment totalCostMs={} success=false message={}",
+                    traceId,
+                    System.currentTimeMillis() - serviceStartTime,
+                    e.getMessage());
+            throw e;
+        }
     }
 
-    private String callModel(String systemPrompt, String userPrompt) {
+    @Override
+    public Flux<String> askQuestion(String question) {
+        ChatClient chatClient = ChatClient.builder(openAiChatModel)
+                .defaultSystem(aiChatSystemPrompt)
+                .build();
+        return chatClient.prompt()
+                .user(question)
+                .stream()
+                .content();
+    }
+
+    private String callModel(String scene, String systemPrompt, String userPrompt) {
+        String traceId = AITraceUtil.currentTraceId();
+        long modelStartTime = System.currentTimeMillis();
         ChatClient chatClient = ChatClient.builder(openAiChatModel)
                 .defaultSystem(systemPrompt)
                 .build();
 
-        return chatClient.prompt()
-                .user(userPrompt)
-                .call()
-                .content();
+        try {
+            String content = chatClient.prompt()
+                    .user(userPrompt)
+                    .call()
+                    .content();
+            logger.info("[ai-complete][backend] traceId={} stage=model-call scene={} costMs={} systemPromptChars={} userPromptChars={} responseChars={}",
+                    traceId,
+                    scene,
+                    System.currentTimeMillis() - modelStartTime,
+                    AITraceUtil.safeLength(systemPrompt),
+                    AITraceUtil.safeLength(userPrompt),
+                    AITraceUtil.safeLength(content));
+            return content;
+        } catch (RuntimeException e) {
+            logger.error("[ai-complete][backend] traceId={} stage=model-call scene={} costMs={} systemPromptChars={} userPromptChars={} success=false",
+                    traceId,
+                    scene,
+                    System.currentTimeMillis() - modelStartTime,
+                    AITraceUtil.safeLength(systemPrompt),
+                    AITraceUtil.safeLength(userPrompt),
+                    e);
+            throw e;
+        }
     }
 
     private String readPrompt(org.springframework.core.io.Resource resource) {

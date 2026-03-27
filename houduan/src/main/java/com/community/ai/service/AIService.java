@@ -8,6 +8,7 @@ import com.community.ai.dto.ServiceAppointmentEnhanceRequest;
 import com.community.ai.dto.ServiceAppointmentEnhanceResponse;
 import com.community.ai.dto.WorkOrderEnhanceRequest;
 import com.community.ai.dto.WorkOrderEnhanceResponse;
+import reactor.core.publisher.Flux;
 
 public interface AIService {
 
@@ -51,4 +52,12 @@ public interface AIService {
      * @return 完善后的预约信息
      */
     ServiceAppointmentEnhanceResponse enhanceServiceAppointment(ServiceAppointmentEnhanceRequest request);
+
+    /**
+     * 提问
+     *
+     * @param question 问题
+     * @return 回复
+     */
+    Flux<String> askQuestion(String question);
 }
