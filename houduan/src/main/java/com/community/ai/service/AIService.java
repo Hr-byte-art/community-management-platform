@@ -59,5 +59,5 @@ public interface AIService {
      * @param question 问题
      * @return 回复
      */
-    Flux<String> askQuestion(String question);
+    Flux<String> askQuestion(String question, Long userId, String username, String role);
 }

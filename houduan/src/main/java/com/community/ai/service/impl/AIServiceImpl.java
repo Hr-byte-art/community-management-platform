@@ -10,22 +10,35 @@ import com.community.ai.dto.ServiceAppointmentEnhanceResponse;
 import com.community.ai.dto.WorkOrderEnhanceRequest;
 import com.community.ai.dto.WorkOrderEnhanceResponse;
 import com.community.ai.service.AIService;
+import com.community.ai.tools.AppointmentTools;
+import com.community.ai.tools.MessageTools;
+import com.community.ai.tools.PointsTools;
+import com.community.ai.tools.ToolContextSupport;
+import com.community.ai.tools.WorkOrderTools;
 import com.community.ai.util.AITraceUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Flux;
+import org.springframework.ai.openai.OpenAiChatOptions;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 
@@ -39,6 +52,8 @@ public class AIServiceImpl implements AIService {
     private static final Set<String> NEIGHBOR_HELP_TYPES = Set.of("SEEK", "OFFER");
     private static final Set<String> NEIGHBOR_HELP_CATEGORIES = Set.of("DAILY", "SKILL", "ITEM", "OTHER");
     private static final Set<String> APPOINTMENT_SERVICE_TYPES = Set.of("REPAIR", "CLEAN", "MEDICAL", "OTHER");
+    private static final int QA_TOP_K = 4;
+    private static final int QA_DOC_MAX_CHARS = 900;
 
     @Resource
     private ChatModel openAiChatModel;
@@ -46,8 +61,20 @@ public class AIServiceImpl implements AIService {
     @Resource
     private ObjectMapper objectMapper;
 
-    @Value("classpath:/prompt/FillInWorkOrderSystemPrompt.st")
-    private org.springframework.core.io.Resource workOrderTextPromptResource;
+    @Resource
+    private WorkOrderTools workOrderTools;
+
+    @Resource
+    private AppointmentTools appointmentTools;
+
+    @Resource
+    private MessageTools messageTools;
+
+    @Resource
+    private PointsTools pointsTools;
+
+    @Resource
+    private VectorStore myPgVectorStore;
 
     @Value("classpath:/prompt/StructuredWorkOrderEnhancePrompt.st")
     private org.springframework.core.io.Resource structuredWorkOrderPromptResource;
@@ -64,7 +91,12 @@ public class AIServiceImpl implements AIService {
     @Value("classpath:/prompt/AIChatSystemPrompt.st")
     private org.springframework.core.io.Resource aiChatSystemPromptResource;
 
-    private String workOrderTextPrompt;
+    @Value("${spring.ai.openai.chat.options.fast-model:qwen-flash}")
+    private String fastAiModel;
+
+    @Value("${spring.ai.openai.chat.options.model:qwen3.5-plus}")
+    private String aiModel;
+
     private String structuredWorkOrderPrompt;
     private String structuredHazardPrompt;
     private String structuredNeighborHelpPrompt;
@@ -73,7 +105,6 @@ public class AIServiceImpl implements AIService {
 
     @PostConstruct
     public void init() {
-        workOrderTextPrompt = readPrompt(workOrderTextPromptResource);
         structuredWorkOrderPrompt = readPrompt(structuredWorkOrderPromptResource);
         structuredHazardPrompt = readPrompt(structuredHazardPromptResource);
         structuredNeighborHelpPrompt = readPrompt(structuredNeighborHelpPromptResource);
@@ -83,7 +114,44 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public String getAnswers(String question) {
-        return callModel("qa", workOrderTextPrompt, question);
+        String traceId = AITraceUtil.currentTraceId();
+        long startTime = System.currentTimeMillis();
+        String normalizedQuestion = normalizeText(question);
+        if (StrUtil.isBlank(normalizedQuestion)) {
+            throw new IllegalArgumentException("question must not be blank");
+        }
+
+        List<Document> relatedDocs = similaritySearchForQa(normalizedQuestion, QA_TOP_K);
+        String contextBlock = buildQaContext(relatedDocs);
+        String userPrompt = buildQaUserPrompt(normalizedQuestion, contextBlock);
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model(aiModel)
+                .build();
+        ChatClient chatClient = ChatClient.builder(openAiChatModel)
+                .defaultOptions(options)
+                .defaultSystem(buildQaSystemPrompt(StrUtil.isNotBlank(contextBlock)))
+                .build();
+
+        try {
+            String answer = chatClient.prompt()
+                    .user(userPrompt)
+                    .call()
+                    .content();
+            logger.info("[ai-complete][backend] traceId={} stage=service scene=qa-rag totalCostMs={} docs={} questionChars={} answerChars={}",
+                    traceId,
+                    System.currentTimeMillis() - startTime,
+                    relatedDocs.size(),
+                    AITraceUtil.safeLength(normalizedQuestion),
+                    AITraceUtil.safeLength(answer));
+            return answer;
+        } catch (RuntimeException e) {
+            logger.error("[ai-complete][backend] traceId={} stage=service scene=qa-rag totalCostMs={} docs={} success=false",
+                    traceId,
+                    System.currentTimeMillis() - startTime,
+                    relatedDocs.size(),
+                    e);
+            throw e;
+        }
     }
 
     @Override
@@ -203,21 +271,41 @@ public class AIServiceImpl implements AIService {
     }
 
     @Override
-    public Flux<String> askQuestion(String question) {
+    public Flux<String> askQuestion(String question, Long userId, String username, String role) {
         ChatClient chatClient = ChatClient.builder(openAiChatModel)
                 .defaultSystem(aiChatSystemPrompt)
                 .build();
-        return chatClient.prompt()
+        ChatClient.ChatClientRequestSpec promptSpec = chatClient.prompt()
+                .tools(workOrderTools, appointmentTools, messageTools, pointsTools)
+                .toolContext(buildToolContext(userId, username, role));
+        if (myPgVectorStore != null) {
+            promptSpec = promptSpec.advisors(QuestionAnswerAdvisor.builder(myPgVectorStore).build());
+        }
+        return promptSpec
                 .user(question)
                 .stream()
                 .content();
     }
 
+    private Map<String, Object> buildToolContext(Long userId, String username, String role) {
+        return Map.of(
+                ToolContextSupport.USER_ID, userId == null ? "" : userId,
+                ToolContextSupport.USERNAME, username == null ? "" : username,
+                ToolContextSupport.ROLE, role == null ? "" : role
+        );
+    }
+
     private String callModel(String scene, String systemPrompt, String userPrompt) {
         String traceId = AITraceUtil.currentTraceId();
         long modelStartTime = System.currentTimeMillis();
+        
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model(fastAiModel)
+                .build();
+
         ChatClient chatClient = ChatClient.builder(openAiChatModel)
                 .defaultSystem(systemPrompt)
+                .defaultOptions(options)
                 .build();
 
         try {
@@ -243,6 +331,122 @@ public class AIServiceImpl implements AIService {
                     e);
             throw e;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Document> similaritySearchForQa(String question, int topK) {
+        if (myPgVectorStore == null) {
+            return Collections.emptyList();
+        }
+        try {
+            Method similaritySearch = myPgVectorStore.getClass().getMethod("similaritySearch", String.class);
+            Object result = similaritySearch.invoke(myPgVectorStore, question);
+            return castDocumentList(result);
+        } catch (NoSuchMethodException ignored) {
+            return similaritySearchWithSearchRequest(question, topK);
+        } catch (Exception e) {
+            logger.warn("[ai-complete][backend] stage=qa-rag reason=vector-search-failed mode=string-query message={}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    private List<Document> similaritySearchWithSearchRequest(String question, int topK) {
+        try {
+            Class<?> requestClass = Class.forName("org.springframework.ai.vectorstore.SearchRequest");
+            Method builderMethod = requestClass.getMethod("builder");
+            Object builder = builderMethod.invoke(null);
+            invokeBuilderMethod(builder, "query", String.class, question);
+            if (!invokeBuilderMethod(builder, "topK", int.class, topK)) {
+                invokeBuilderMethod(builder, "topK", Integer.class, topK);
+            }
+            Object searchRequest = builder.getClass().getMethod("build").invoke(builder);
+            Method similaritySearch = myPgVectorStore.getClass().getMethod("similaritySearch", requestClass);
+            Object result = similaritySearch.invoke(myPgVectorStore, searchRequest);
+            return castDocumentList(result);
+        } catch (Exception e) {
+            logger.warn("[ai-complete][backend] stage=qa-rag reason=vector-search-failed mode=search-request message={}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    private boolean invokeBuilderMethod(Object builder, String methodName, Class<?> parameterType, Object value) {
+        try {
+            Method method = builder.getClass().getMethod(methodName, parameterType);
+            method.invoke(builder, value);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private List<Document> castDocumentList(Object result) {
+        if (!(result instanceof List<?> rawList)) {
+            return Collections.emptyList();
+        }
+        return rawList.stream()
+                .filter(Document.class::isInstance)
+                .map(Document.class::cast)
+                .toList();
+    }
+
+    private String buildQaContext(List<Document> docs) {
+        if (docs == null || docs.isEmpty()) {
+            return "";
+        }
+        StringBuilder contextBuilder = new StringBuilder();
+        int index = 1;
+        for (Document doc : docs) {
+            String text = normalizeText(doc.getText());
+            if (StrUtil.isBlank(text)) {
+                continue;
+            }
+            if (text.length() > QA_DOC_MAX_CHARS) {
+                text = text.substring(0, QA_DOC_MAX_CHARS);
+            }
+            Map<String, Object> metadata = doc.getMetadata();
+            String documentTitle = metadataValue(metadata, "documentTitle");
+            String sectionTitle = metadataValue(metadata, "sectionTitle");
+            contextBuilder.append("[Context ").append(index).append("]\n");
+            if (StrUtil.isNotBlank(documentTitle)) {
+                contextBuilder.append("documentTitle: ").append(documentTitle).append("\n");
+            }
+            if (StrUtil.isNotBlank(sectionTitle)) {
+                contextBuilder.append("sectionTitle: ").append(sectionTitle).append("\n");
+            }
+            contextBuilder.append(text).append("\n\n");
+            index++;
+        }
+        return contextBuilder.toString().trim();
+    }
+
+    private String metadataValue(Map<String, Object> metadata, String key) {
+        if (metadata == null || StrUtil.isBlank(key)) {
+            return "";
+        }
+        Object value = metadata.get(key);
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private String buildQaSystemPrompt(boolean hasContext) {
+        if (hasContext) {
+            return "You are the community assistant. Answer based on the provided context first. "
+                    + "If context is insufficient, clearly say what is uncertain, then provide best-effort guidance. "
+                    + "Keep answer concise and practical. Respond in Simplified Chinese.";
+        }
+        return "You are the community assistant. No retrieved context is available. "
+                + "Provide careful best-effort guidance and avoid fabricating specific facts. "
+                + "Respond in Simplified Chinese.";
+    }
+
+    private String buildQaUserPrompt(String question, String contextBlock) {
+        if (StrUtil.isBlank(contextBlock)) {
+            return "用户问题：\n" + question;
+        }
+        return "请基于以下检索内容回答用户问题。\n\n"
+                + "检索内容：\n"
+                + contextBlock
+                + "\n\n用户问题：\n"
+                + question;
     }
 
     private String readPrompt(org.springframework.core.io.Resource resource) {

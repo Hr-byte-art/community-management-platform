@@ -41,6 +41,9 @@ public class AIChatController {
         }
 
         String traceId = StrUtil.blankToDefault(httpRequest.getHeader(AI_TRACE_ID_HEADER), "unknown");
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        String username = (String) httpRequest.getAttribute("username");
+        String role = (String) httpRequest.getAttribute("role");
         long startTime = System.currentTimeMillis();
         SseEmitter emitter = new SseEmitter(CHAT_TIMEOUT_MS);
         AtomicReference<Disposable> subscriptionRef = new AtomicReference<>();
@@ -72,14 +75,9 @@ public class AIChatController {
         CompletableFuture.runAsync(() -> {
             sendEvent(emitter, "start", "[START]");
 
-            Disposable disposable = aiService.askQuestion(question).subscribe(
+            Disposable disposable = aiService.askQuestion(question, userId, username, role).subscribe(
                     chunk -> {
-                        int chunkIndex = chunkCounter.incrementAndGet();
-                        logger.info("[ai-chat][backend] traceId={} stage=chunk index={} chunkChars={} costMs={}",
-                                traceId,
-                                chunkIndex,
-                                chunk == null ? 0 : chunk.length(),
-                                System.currentTimeMillis() - startTime);
+                        chunkCounter.incrementAndGet();
                         if (!sendEvent(emitter, "message", chunk)) {
                             cleanup.run();
                         }

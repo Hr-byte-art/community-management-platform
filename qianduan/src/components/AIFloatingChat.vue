@@ -211,12 +211,12 @@ const handleSend = async () => {
     content,
     streaming: false
   }
-  const assistantMessage = {
+  const assistantMessage = reactive({
     id: nextMessageId++,
     role: 'assistant',
     content: '',
     streaming: true
-  }
+  })
 
   messages.value.push(userMessage, assistantMessage)
   question.value = ''
@@ -226,7 +226,7 @@ const handleSend = async () => {
   try {
     await streamAIChat(content, {
       onMessage: (chunk) => {
-        assistantMessage.content += chunk
+        assistantMessage.content += chunk || ''
         scrollToBottom()
       }
     })
