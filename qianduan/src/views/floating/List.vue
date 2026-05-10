@@ -52,8 +52,8 @@
         <el-form-item label="现居住地址"><el-input v-model="form.currentAddress" /></el-form-item>
         <el-form-item label="工作单位"><el-input v-model="form.workUnit" /></el-form-item>
         <el-row :gutter="20">
-          <el-col :span="12"><el-form-item label="登记日期"><el-date-picker v-model="form.registerDate" type="date" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="预计离开"><el-date-picker v-model="form.expectedLeaveDate" type="date" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="登记日期"><el-date-picker v-model="form.registerDate" type="date" value-format="YYYY-MM-DD" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="预计离开"><el-date-picker v-model="form.expectedLeaveDate" type="date" value-format="YYYY-MM-DD" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="状态"><el-select v-model="form.status"><el-option label="在住" :value="1" /><el-option label="已离开" :value="0" /></el-select></el-form-item>
         <el-form-item label="人员照片"><ImageUploadField v-model="form.photo" /></el-form-item>

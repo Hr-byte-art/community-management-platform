@@ -174,12 +174,22 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="开始时间">
-              <el-date-picker v-model="form.startTime" type="datetime" :disabled="isView" />
+              <el-date-picker
+                v-model="form.startTime"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled="isView"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="结束时间">
-              <el-date-picker v-model="form.endTime" type="datetime" :disabled="isView" />
+              <el-date-picker
+                v-model="form.endTime"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                :disabled="isView"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -471,6 +481,21 @@ const getRegistrationActivityStatusType = (record) => {
 
 const formatRegistrationUser = (userId) => userMap.value[userId] || `用户${userId}`
 
+const formatDateTime = (value) => {
+  if (!value) return value
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  const pad = (num) => String(num).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+const normalizeActivityForm = (row = {}) => ({
+  ...row,
+  startTime: formatDateTime(row.startTime),
+  endTime: formatDateTime(row.endTime)
+})
+
 const handleAdd = () => {
   form.value = { isCancelled: 0, activityType: 'CULTURE' }
   dialogMode.value = 'add'
@@ -478,14 +503,14 @@ const handleAdd = () => {
 }
 
 const handleEdit = (row) => {
-  form.value = { ...row }
+  form.value = normalizeActivityForm(row)
   dialogMode.value = 'edit'
   dialogVisible.value = true
 }
 
 const handleView = async (row) => {
   const res = await activityApi.get(row.id)
-  form.value = res?.data || row
+  form.value = normalizeActivityForm(res?.data || row)
   rememberActivities([form.value])
   dialogMode.value = 'view'
   dialogVisible.value = true
@@ -498,17 +523,18 @@ const handleViewActivityById = async (activityId) => {
     return
   }
   const res = await activityApi.get(activityId)
-  form.value = res?.data || { id: activityId }
+  form.value = normalizeActivityForm(res?.data || { id: activityId })
   rememberActivities([form.value])
   dialogMode.value = 'view'
   dialogVisible.value = true
 }
 
 const handleSubmit = async () => {
-  if (form.value.id) {
-    await activityApi.edit(form.value.id, form.value)
+  const payload = normalizeActivityForm(form.value)
+  if (payload.id) {
+    await activityApi.edit(payload.id, payload)
   } else {
-    await activityApi.add(form.value)
+    await activityApi.add(payload)
   }
   ElMessage.success('操作成功')
   dialogVisible.value = false

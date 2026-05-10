@@ -59,7 +59,9 @@
             <el-option label="医疗" value="MEDICAL" /><el-option label="其他" value="OTHER" />
           </el-select>
         </el-form-item>
-        <el-form-item label="预约时间" prop="appointmentTime"><el-date-picker v-model="form.appointmentTime" type="datetime" /></el-form-item>
+        <el-form-item label="预约时间" prop="appointmentTime">
+          <el-date-picker v-model="form.appointmentTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" />
+        </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="联系人" prop="contactName"><el-input v-model="form.contactName" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="联系电话" prop="contactPhone"><el-input v-model="form.contactPhone" /></el-form-item></el-col>
@@ -126,6 +128,11 @@ const loadData = async () => {
   loading.value = false
 }
 
+const normalizeAppointmentForm = (row = {}) => ({
+  ...row,
+  appointmentTime: row.appointmentTime || ''
+})
+
 const handleAdd = () => {
   form.value = { serviceType: 'REPAIR' }
   aiLoading.value = false
@@ -137,7 +144,7 @@ const handleAdd = () => {
 
 const handleEdit = async (row) => {
   const res = await appointmentApi.get(row.id)
-  form.value = res.data
+  form.value = normalizeAppointmentForm(res.data)
   aiLoading.value = false
   dialogVisible.value = true
   nextTick(() => {

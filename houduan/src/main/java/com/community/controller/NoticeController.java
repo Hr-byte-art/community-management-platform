@@ -6,7 +6,6 @@ import com.community.common.Result;
 import com.community.common.Constants;
 import com.community.entity.Notice;
 import com.community.entity.NoticeReadRecord;
-import com.community.entity.SysUser;
 import com.community.service.NoticeService;
 import com.community.service.NoticeReadRecordService;
 import com.community.service.SysPermissionService;
@@ -25,8 +24,6 @@ public class NoticeController {
     private NoticeService noticeService;
     @Autowired
     private NoticeReadRecordService readRecordService;
-    @Autowired
-    private SysUserService sysUserService;
     @Autowired
     private SysPermissionService sysPermissionService;
 
@@ -68,7 +65,6 @@ public class NoticeController {
     @Auth(permissions = {"btn.notice.stats"})
     @GetMapping("/{id}/stats")
     public Result<?> getStats(@PathVariable Long id, HttpServletRequest request) {
-        Long userId = (Long) request.getAttribute("userId");
         String role = (String) request.getAttribute("role");
         
         // 只有管理员才能查看统计数据

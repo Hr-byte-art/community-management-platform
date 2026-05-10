@@ -3,10 +3,8 @@ package com.community.controller;
 import com.community.annotation.Auth;
 import com.community.annotation.Log;
 import com.community.common.Result;
-import com.community.common.Constants;
 import com.community.entity.FloatingPopulation;
 import com.community.service.FloatingPopulationService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
